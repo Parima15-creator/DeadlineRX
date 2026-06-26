@@ -15,7 +15,7 @@ $class = $_SESSION['class_name'];
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Dashboard — ASLB System</title>
+  <title>Student Dashboard — DeadlineRX System</title>
   <link rel="stylesheet" href="student-dashboard.css">
 </head>
 <body>
@@ -24,7 +24,7 @@ $class = $_SESSION['class_name'];
       <div class="logo-icon">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
       </div>
-      <span style="font-weight: 700; font-size: 1.1rem;">ASLB System</span>
+      <span style="font-weight: 700; font-size: 1.1rem;">DeadlineRX System</span>
     </div>
 
     <nav class="nav-group">

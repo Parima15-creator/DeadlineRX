@@ -14,25 +14,36 @@ function injectDeadlineRxPanel() {
     let parent = assignmentBox.closest(".content-grid") || assignmentBox.parentElement.parentElement;
 
     const aiPanel = document.createElement("section");
-    aiPanel.className = "tile";
+    aiPanel.className = "tile rx-ai-panel";
     aiPanel.innerHTML = `
-        <h3>DeadlineRX AI Rescue Planner</h3>
-        <p style="color: var(--aslb-muted); margin: 10px 0 18px;">
-            Enter how much time you have today and generate a realistic action plan.
-        </p>
+        <div class="rx-panel-header">
+            <div>
+                <span class="rx-chip">AI Rescue Mode</span>
+                <h3>DeadlineRX Planner</h3>
+                <p>Turn deadline pressure into a clear action plan.</p>
+            </div>
 
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 15px;">
-            <label style="font-weight: 600;">Available hours today:</label>
-            <input type="number" id="availableHoursToday" min="0.5" step="0.5" value="3"
-                   style="padding: 10px; border: 1px solid var(--aslb-border); border-radius: 10px; width: 140px;">
-            <button onclick="generateAiPlan()" 
-                    style="padding: 10px 16px; background: var(--aslb-blue); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600;">
-                Generate My Rescue Plan
+            <div class="rx-mini-stat">
+                <span id="rxTaskCount">0</span>
+                <small>active tasks</small>
+            </div>
+        </div>
+
+        <div class="rx-control-box">
+            <div>
+                <label>Available hours today</label>
+                <input type="number" id="availableHoursToday" min="0.5" step="0.5" value="3">
+            </div>
+
+            <button onclick="generateAiPlan()" class="rx-generate-btn">
+                Generate Rescue Plan
             </button>
         </div>
 
-        <div id="aiPlanOutput" style="white-space: pre-wrap; background: #f8fafc; border: 1px solid var(--aslb-border); border-radius: 14px; padding: 18px; color: #334155;">
-            Your AI plan will appear here.
+        <div id="aiPlanOutput" class="rx-plan-empty">
+            <div class="rx-empty-icon">⚡</div>
+            <h4>Your AI rescue plan will appear here</h4>
+            <p>Add/update task progress and generate a realistic plan for today.</p>
         </div>
     `;
 
@@ -61,6 +72,9 @@ async function loadDeadlineRxTasks() {
 function renderTaskLists() {
     const assignments = deadlineRxTasks.filter(t => t.task_type === "assignment");
     const tests = deadlineRxTasks.filter(t => t.task_type === "test");
+    const activeCount = deadlineRxTasks.filter(t => Number(t.is_completed) !== 1).length;
+    const countBox = document.getElementById("rxTaskCount");
+    if (countBox) countBox.textContent = activeCount;
 
     renderTaskCards("studentAssignmentList", assignments, "No pending assignments.");
     renderTaskCards("studentTestList", tests, "No tests scheduled.");
@@ -218,7 +232,12 @@ async function generateAiPlan() {
     const output = document.getElementById("aiPlanOutput");
     const availableHours = Number(document.getElementById("availableHoursToday")?.value || 3);
 
-    output.textContent = "Generating your DeadlineRX rescue plan...";
+    output.className = "rx-plan-loading";
+    output.innerHTML = `
+        <div class="rx-loader"></div>
+        <h4>Creating your rescue plan...</h4>
+        <p>DeadlineRX is checking task urgency, time left, and workload.</p>
+    `;
 
     try {
         const res = await fetch("generate-ai-plan.php", {
@@ -233,17 +252,116 @@ async function generateAiPlan() {
         const data = await res.json();
 
         if (data.success) {
-            output.textContent = data.plan;
+            output.className = "rx-plan-output";
+            output.innerHTML = renderAiPlanText(data.plan);
         } else {
-            output.textContent = data.message || "Could not generate plan.";
+            output.className = "rx-plan-empty";
+            output.innerHTML = `
+                <div class="rx-empty-icon">⚠️</div>
+                <h4>Could not generate plan</h4>
+                <p>${escapeHtml(data.message || "Something went wrong.")}</p>
+            `;
         }
 
     } catch (error) {
         console.error("AI plan error:", error);
-        output.textContent = "Error generating AI plan.";
+        output.className = "rx-plan-empty";
+        output.innerHTML = `
+            <div class="rx-empty-icon">⚠️</div>
+            <h4>Error generating AI plan</h4>
+            <p>Please check console or try again.</p>
+        `;
     }
 }
+function renderAiPlanText(plan) {
+    const safePlan = escapeHtml(plan);
 
+    const lines = safePlan
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+    let priorityLines = [];
+    let suggestedLines = [];
+    let importantLines = [];
+    let currentSection = "summary";
+
+    lines.forEach(line => {
+        const lower = line.toLowerCase();
+
+        if (lower.includes("priority order")) {
+            currentSection = "priority";
+            return;
+        }
+
+        if (lower.includes("suggested plan")) {
+            currentSection = "suggested";
+            return;
+        }
+
+        if (lower.includes("important")) {
+            currentSection = "important";
+            importantLines.push(line.replace(/^Important:\s*/i, ""));
+            return;
+        }
+
+        if (currentSection === "priority") {
+            priorityLines.push(line);
+        } else if (currentSection === "suggested") {
+            suggestedLines.push(line.replace(/^-/, "").trim());
+        } else if (currentSection === "important") {
+            importantLines.push(line);
+        }
+    });
+
+    const topTask = priorityLines.length ? priorityLines[0].replace(/^\d+\.\s*/, "") : "No priority task found";
+
+    return `
+        <div class="rx-plan-card">
+            <div class="rx-plan-top">
+                <div>
+                    <span class="rx-chip danger">Today’s Focus</span>
+                    <h3>${topTask}</h3>
+                    <p>This is the task DeadlineRX recommends handling first.</p>
+                </div>
+            </div>
+
+            <div class="rx-plan-grid">
+                <div class="rx-section">
+                    <h4>Priority Order</h4>
+                    ${
+                        priorityLines.length
+                        ? `<ol>${priorityLines.map(line => `<li>${line.replace(/^\d+\.\s*/, "")}</li>`).join("")}</ol>`
+                        : `<p>No priority order available.</p>`
+                    }
+                </div>
+
+                <div class="rx-section">
+                    <h4>Action Plan</h4>
+                    ${
+                        suggestedLines.length
+                        ? `<div class="rx-timeline">${suggestedLines.map(line => `
+                            <div class="rx-timeline-item">
+                                <span></span>
+                                <p>${line}</p>
+                            </div>
+                        `).join("")}</div>`
+                        : `<p>No suggested plan available.</p>`
+                    }
+                </div>
+            </div>
+
+            ${
+                importantLines.length
+                ? `<div class="rx-warning-box">
+                    <strong>Damage-control advice</strong>
+                    <p>${importantLines.join(" ")}</p>
+                </div>`
+                : ""
+            }
+        </div>
+    `;
+}
 function getRiskColor(level) {
     switch (level) {
         case "Critical":

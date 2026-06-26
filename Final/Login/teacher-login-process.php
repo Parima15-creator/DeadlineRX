@@ -4,10 +4,6 @@ require_once '../db_config.php';
 
 // 2. Set cookie params BEFORE starting the session
 if (session_status() === PHP_SESSION_NONE) {
-    session_set_cookie_params([
-        'path' => '/ASLB/', // Ensure this matches your actual folder name
-        'samesite' => 'Lax'
-    ]);
     session_start();
 }
 
