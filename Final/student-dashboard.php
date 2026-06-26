@@ -77,6 +77,7 @@ $class = $_SESSION['class_name'];
 
   <script src="calendar-data.js"></script>
   <script src="calendar.js"></script>
+  <script src="deadline-rx.js"></script>
 
   <script>
     (function() {

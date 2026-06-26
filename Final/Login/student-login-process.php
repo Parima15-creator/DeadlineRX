@@ -26,6 +26,8 @@ $result = $stmt->get_result();
         $_SESSION['student_name'] = $student['Username'];
         $_SESSION['dept_name'] = $student['Department_Name'];
         $_SESSION['class_name'] = $student['Class_Name'];
+        $_SESSION['student_email'] = $student['College_Email_ID'];
+        $_SESSION['student_class_id'] = $student['Class_ID'];
 
         // Redirect to dashboard
         header("Location: ../student-dashboard.php");

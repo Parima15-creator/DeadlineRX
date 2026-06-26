@@ -1,8 +1,8 @@
 <?php
 $host = "localhost";
-$db_user = "root"; 
-$db_pass = "";     
-$db_name = "aslb"; 
+$db_user = "root";
+$db_pass = "";
+$db_name = "deadlinerx";
 
 $conn = new mysqli($host, $db_user, $db_pass, $db_name);
 

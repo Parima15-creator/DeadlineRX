@@ -194,9 +194,9 @@ $class_map = [
                         >
                     </div>
                     <div class="form-group"><label>Proposed Deadline</label><input type="date" name="proposed_deadline" id="proposed_deadline" required></div>
-                    <div class="form-group full-width"><label>Portion / Description</label><textarea name="portion" rows="4"></textarea></div>
+                    <div class="form-group full-width"><label>Portion / Description</label><textarea name="description" rows="4"></textarea></div>
                 </div>
-                <div class="form-footer"><button type="submit" class="submit-btn">Analyze & Confirm Deadline</button></div>
+                <button type="submit" class="submit-btn">Add Task</button>
             </form>
         </div>
     </div>
