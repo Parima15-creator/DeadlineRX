@@ -430,7 +430,7 @@ body {
 .rx-control-box {
     display: flex;
     flex-wrap: wrap;
-    align-items: end;
+    align-items: flex-end;
     gap: 16px;
     background: #ffffff;
     border: 1px solid #e2e8f0;
@@ -469,7 +469,10 @@ body {
     border-radius: 12px;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white;
-    font-weight: 800;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0;
     cursor: pointer;
     box-shadow: 0 12px 25px rgba(99, 102, 241, 0.25);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -639,7 +642,240 @@ body {
     }
 
     .rx-control-box input,
+    .rx-context-field,
+    .rx-context-field textarea,
     .rx-generate-btn {
         width: 100%;
+    }
+}
+
+/* DeadlineRX Personal Tasks + Progress Cards */
+
+.rx-personal-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+.rx-personal-header h3 {
+    font-size: 1.4rem;
+    margin-bottom: 6px;
+    color: #111827;
+}
+
+.rx-personal-header p {
+    color: #64748b;
+    margin-bottom: 18px;
+}
+
+.rx-personal-form {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 0.8fr 0.6fr 0.6fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.rx-personal-form input,
+.rx-personal-form textarea {
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+.rx-personal-form input:focus,
+.rx-personal-form textarea:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+.rx-personal-form textarea {
+    grid-column: 1 / -2;
+    min-height: 80px;
+    resize: vertical;
+}
+
+.rx-add-task-btn {
+    border: none;
+    border-radius: 12px;
+    background: #6366f1;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 12px 18px;
+}
+
+.rx-add-task-btn:hover {
+    background: #4f46e5;
+}
+
+/* Task Cards */
+
+.deadline-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 20px;
+    margin-bottom: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.deadline-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.deadline-card h4 {
+    margin: 8px 0 6px;
+    color: #111827;
+    font-size: 1.1rem;
+}
+
+.deadline-card p {
+    color: #64748b;
+}
+
+.task-source {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.task-source.teacher {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.task-source.personal {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.risk-badge {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.risk-reason {
+    margin: 14px 0;
+    color: #475569;
+}
+
+.task-progress-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.task-progress-grid label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 800;
+    margin-bottom: 7px;
+    color: #475569;
+    text-transform: uppercase;
+}
+
+.task-progress-grid input,
+.task-progress-grid select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    font-family: 'Inter', sans-serif;
+}
+
+.task-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.task-save-btn,
+.task-complete-btn,
+.task-delete-btn {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+}
+
+.task-save-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+}
+
+.task-save-btn:hover {
+    background: #f8fafc;
+}
+
+.task-complete-btn {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.task-complete-btn:hover {
+    background: #059669;
+}
+
+.task-delete-btn {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.task-delete-btn:hover {
+    background: #fecaca;
+}
+
+/* Extra AI Context Box */
+
+.rx-context-field {
+    flex: 1;
+    min-width: 300px;
+}
+
+.rx-context-field textarea {
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    resize: vertical;
+    outline: none;
+}
+
+.rx-context-field textarea:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+@media (max-width: 900px) {
+    .rx-personal-form {
+        grid-template-columns: 1fr;
+    }
+
+    .rx-personal-form textarea {
+        grid-column: auto;
+    }
+
+    .task-progress-grid {
+        grid-template-columns: 1fr;
     }
 }

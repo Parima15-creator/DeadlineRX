@@ -95,6 +95,20 @@ CREATE TABLE IF NOT EXISTS ai_plans (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS student_personal_tasks (
+    Personal_Task_ID INT AUTO_INCREMENT PRIMARY KEY,
+    student_email VARCHAR(150) NOT NULL,
+    Title VARCHAR(150) NOT NULL,
+    Subject VARCHAR(100) DEFAULT 'Personal Task',
+    Due_Date DATE NOT NULL,
+    Difficulty_Index INT DEFAULT 5,
+    Weightage DECIMAL(5,2) DEFAULT 0,
+    Estimated_Hours DECIMAL(5,2) DEFAULT 1,
+    Description TEXT NULL,
+    Is_Completed TINYINT(1) DEFAULT 0,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 INSERT INTO department (Department_ID, Department_Name) VALUES
 (1, 'Computer Department'),
 (2, 'Civil Department'),
@@ -137,5 +151,8 @@ INSERT INTO academic_calendar (Dates, Events, Holidays) VALUES
 ('2026-04-21', 'IT/ISA Exam', 'No'),
 ('2026-04-22', 'IT/ISA Exam Ends', 'No'),
 ('2026-05-01', 'Labour Day', 'Yes');
+
+ALTER TABLE student_task_progress 
+MODIFY task_type ENUM('assignment', 'test', 'personal') NOT NULL;
 
 COMMIT;

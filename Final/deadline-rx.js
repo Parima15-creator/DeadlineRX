@@ -1,9 +1,47 @@
 let deadlineRxTasks = [];
 
 document.addEventListener("DOMContentLoaded", function () {
+    injectPersonalTaskPanel();
     injectDeadlineRxPanel();
     loadDeadlineRxTasks();
 });
+
+function injectPersonalTaskPanel() {
+    const assignmentBox = document.getElementById("studentAssignmentList");
+    if (!assignmentBox) return;
+
+    const parent = assignmentBox.closest(".content-grid") || assignmentBox.parentElement.parentElement;
+
+    if (document.getElementById("rxPersonalTaskPanel")) return;
+
+    const personalPanel = document.createElement("section");
+    personalPanel.className = "tile rx-personal-panel";
+    personalPanel.id = "rxPersonalTaskPanel";
+
+    personalPanel.innerHTML = `
+        <div class="rx-personal-header">
+            <div>
+                <h3>My Personal Tasks</h3>
+                <p>Add private tasks that only you can see. DeadlineRX will include them in your AI plan.</p>
+            </div>
+        </div>
+
+        <div class="rx-personal-form">
+            <input type="text" id="personalTitle" placeholder="Task title e.g. Revise Java Unit 3">
+            <input type="text" id="personalSubject" placeholder="Subject / category" value="Personal Task">
+            <input type="date" id="personalDueDate">
+            <input type="number" id="personalDifficulty" min="1" max="10" value="5" placeholder="Difficulty">
+            <input type="number" id="personalHours" min="0.5" step="0.5" value="1" placeholder="Hours">
+            <textarea id="personalDescription" placeholder="Description or notes"></textarea>
+
+            <button onclick="addPersonalTask()" class="rx-add-task-btn">Add Personal Task</button>
+        </div>
+
+        <div id="studentPersonalTaskList" class="empty-state">No personal tasks added.</div>
+    `;
+
+    parent.appendChild(personalPanel);
+}
 
 function injectDeadlineRxPanel() {
     const assignmentBox = document.getElementById("studentAssignmentList");
@@ -11,10 +49,14 @@ function injectDeadlineRxPanel() {
 
     if (!assignmentBox || !testBox) return;
 
-    let parent = assignmentBox.closest(".content-grid") || assignmentBox.parentElement.parentElement;
+    const parent = assignmentBox.closest(".content-grid") || assignmentBox.parentElement.parentElement;
+
+    if (document.getElementById("rxPlannerPanel")) return;
 
     const aiPanel = document.createElement("section");
     aiPanel.className = "tile rx-ai-panel";
+    aiPanel.id = "rxPlannerPanel";
+
     aiPanel.innerHTML = `
         <div class="rx-panel-header">
             <div>
@@ -33,6 +75,11 @@ function injectDeadlineRxPanel() {
             <div>
                 <label>Available hours today</label>
                 <input type="number" id="availableHoursToday" min="0.5" step="0.5" value="3">
+            </div>
+
+            <div class="rx-context-field">
+                <label>Extra details for AI</label>
+                <textarea id="extraAiContext" placeholder="Example: Teacher is strict, late submission allowed, I am tired today, only coding is left, I have college from 9 to 5."></textarea>
             </div>
 
             <button onclick="generateAiPlan()" class="rx-generate-btn">
@@ -61,7 +108,6 @@ async function loadDeadlineRxTasks() {
         }
 
         deadlineRxTasks = data.tasks || [];
-
         renderTaskLists();
 
     } catch (error) {
@@ -72,12 +118,16 @@ async function loadDeadlineRxTasks() {
 function renderTaskLists() {
     const assignments = deadlineRxTasks.filter(t => t.task_type === "assignment");
     const tests = deadlineRxTasks.filter(t => t.task_type === "test");
+    const personal = deadlineRxTasks.filter(t => t.task_type === "personal");
+
     const activeCount = deadlineRxTasks.filter(t => Number(t.is_completed) !== 1).length;
     const countBox = document.getElementById("rxTaskCount");
+
     if (countBox) countBox.textContent = activeCount;
 
     renderTaskCards("studentAssignmentList", assignments, "No pending assignments.");
     renderTaskCards("studentTestList", tests, "No tests scheduled.");
+    renderTaskCards("studentPersonalTaskList", personal, "No personal tasks added.");
 }
 
 function renderTaskCards(containerId, tasks, emptyText) {
@@ -97,44 +147,41 @@ function renderTaskCards(containerId, tasks, emptyText) {
 function taskCardHtml(task) {
     const risk = task.risk || {};
     const badgeColor = getRiskColor(risk.level);
-    const disabledStyle = task.is_completed == 1 ? "opacity: 0.65;" : "";
+    const disabledStyle = Number(task.is_completed) === 1 ? "opacity: 0.65;" : "";
+    const sourceLabel = task.source === "student" ? "Personal" : "Teacher-given";
 
     return `
-        <div class="deadline-card" style="border: 1px solid var(--aslb-border); border-radius: 16px; padding: 18px; margin-bottom: 14px; background: white; ${disabledStyle}">
-            <div style="display: flex; justify-content: space-between; gap: 12px; align-items: flex-start;">
+        <div class="deadline-card" style="${disabledStyle}">
+            <div class="deadline-card-top">
                 <div>
-                    <h4 style="margin: 0 0 6px; color: var(--aslb-text);">${escapeHtml(task.title)}</h4>
-                    <p style="margin: 0; color: var(--aslb-muted);">
-                        ${escapeHtml(task.subject)} • Due: ${escapeHtml(task.deadline)}
-                    </p>
+                    <span class="task-source ${task.source === "student" ? "personal" : "teacher"}">${sourceLabel}</span>
+                    <h4>${escapeHtml(task.title)}</h4>
+                    <p>${escapeHtml(task.subject)} • Due: ${escapeHtml(task.deadline)}</p>
                 </div>
-                <span style="background: ${badgeColor.bg}; color: ${badgeColor.text}; padding: 6px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700;">
+
+                <span class="risk-badge" style="background:${badgeColor.bg}; color:${badgeColor.text};">
                     ${escapeHtml(risk.level || "Unknown")} ${risk.score ?? 0}/100
                 </span>
             </div>
 
-            <p style="margin: 12px 0; color: #475569;">
-                ${escapeHtml(risk.reason || "Risk calculated from deadline and progress.")}
-            </p>
+            <p class="risk-reason">${escapeHtml(risk.reason || "Risk calculated from deadline and progress.")}</p>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 12px;">
+            <div class="task-progress-grid">
                 <div>
-                    <label style="font-size: 0.8rem; font-weight: 700;">Progress</label>
-                    <select id="progress-${task.task_id}" style="width: 100%; padding: 9px; border-radius: 9px; border: 1px solid var(--aslb-border);">
+                    <label>Progress</label>
+                    <select id="progress-${task.task_id}">
                         ${progressOptions(task.completion_percentage)}
                     </select>
                 </div>
 
                 <div>
-                    <label style="font-size: 0.8rem; font-weight: 700;">Hours left</label>
-                    <input id="hours-${task.task_id}" type="number" min="0" step="0.5" value="${task.estimated_hours_left || ""}"
-                           placeholder="${risk.estimated_hours_left || 1}"
-                           style="width: 100%; padding: 9px; border-radius: 9px; border: 1px solid var(--aslb-border);">
+                    <label>Hours left</label>
+                    <input id="hours-${task.task_id}" type="number" min="0" step="0.5" value="${task.estimated_hours_left || ""}" placeholder="${risk.estimated_hours_left || 1}">
                 </div>
 
                 <div>
-                    <label style="font-size: 0.8rem; font-weight: 700;">Status</label>
-                    <select id="status-${task.task_id}" style="width: 100%; padding: 9px; border-radius: 9px; border: 1px solid var(--aslb-border);">
+                    <label>Status</label>
+                    <select id="status-${task.task_id}">
                         <option value="not_started" ${task.status === "not_started" ? "selected" : ""}>Not started</option>
                         <option value="in_progress" ${task.status === "in_progress" ? "selected" : ""}>In progress</option>
                         <option value="completed" ${task.status === "completed" ? "selected" : ""}>Completed</option>
@@ -142,16 +189,20 @@ function taskCardHtml(task) {
                 </div>
             </div>
 
-            <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
-                <button onclick='saveTaskProgress(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})'
-                        style="padding: 9px 14px; border: 1px solid var(--aslb-border); background: white; border-radius: 9px; cursor: pointer; font-weight: 600;">
+            <div class="task-actions">
+                <button onclick='saveTaskProgress(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})' class="task-save-btn">
                     Save Progress
                 </button>
 
-                <button onclick='markCompleted(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})'
-                        style="padding: 9px 14px; border: none; background: #10b981; color: white; border-radius: 9px; cursor: pointer; font-weight: 600;">
-                    Mark Completed
+                <button onclick='markCompleted(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})' class="task-complete-btn">
+                    ✓ Mark Completed
                 </button>
+
+                ${
+                    task.task_type === "personal"
+                    ? `<button onclick='deletePersonalTask(${JSON.stringify(task.task_id)})' class="task-delete-btn">Delete</button>`
+                    : ""
+                }
             </div>
         </div>
     `;
@@ -163,6 +214,78 @@ function progressOptions(selected) {
     return values.map(v => {
         return `<option value="${v}" ${Number(selected) === v ? "selected" : ""}>${v}%</option>`;
     }).join("");
+}
+
+async function addPersonalTask() {
+    const title = document.getElementById("personalTitle").value.trim();
+    const subject = document.getElementById("personalSubject").value.trim() || "Personal Task";
+    const dueDate = document.getElementById("personalDueDate").value;
+    const difficulty = Number(document.getElementById("personalDifficulty").value || 5);
+    const estimatedHours = Number(document.getElementById("personalHours").value || 1);
+    const description = document.getElementById("personalDescription").value.trim();
+
+    if (!title || !dueDate) {
+        alert("Please enter task title and due date.");
+        return;
+    }
+
+    try {
+        const res = await fetch("add-personal-task.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                title,
+                subject,
+                due_date: dueDate,
+                difficulty,
+                estimated_hours: estimatedHours,
+                description
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            document.getElementById("personalTitle").value = "";
+            document.getElementById("personalSubject").value = "Personal Task";
+            document.getElementById("personalDueDate").value = "";
+            document.getElementById("personalDifficulty").value = "5";
+            document.getElementById("personalHours").value = "1";
+            document.getElementById("personalDescription").value = "";
+
+            await loadDeadlineRxTasks();
+        } else {
+            alert(data.message || "Could not add personal task.");
+        }
+
+    } catch (error) {
+        console.error("Add personal task error:", error);
+        alert("Error adding personal task.");
+    }
+}
+
+async function deletePersonalTask(taskId) {
+    if (!confirm("Delete this personal task?")) return;
+
+    try {
+        const res = await fetch("delete-personal-task.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task_id: taskId })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            await loadDeadlineRxTasks();
+        } else {
+            alert(data.message || "Could not delete task.");
+        }
+
+    } catch (error) {
+        console.error("Delete personal task error:", error);
+        alert("Error deleting task.");
+    }
 }
 
 async function saveTaskProgress(taskId, taskType) {
@@ -181,7 +304,7 @@ async function saveTaskProgress(taskId, taskType) {
                 completion_percentage: progress,
                 estimated_hours_left: hours,
                 available_hours_today: availableHours,
-                status: status
+                status
             })
         });
 
@@ -231,12 +354,25 @@ async function markCompleted(taskId, taskType) {
 async function generateAiPlan() {
     const output = document.getElementById("aiPlanOutput");
     const availableHours = Number(document.getElementById("availableHoursToday")?.value || 3);
+    const extraContext = document.getElementById("extraAiContext")?.value || "";
+
+    const pendingTasks = deadlineRxTasks.filter(t => Number(t.is_completed) !== 1);
+
+    if (!pendingTasks.length) {
+        output.className = "rx-plan-empty";
+        output.innerHTML = `
+            <div class="rx-empty-icon">✅</div>
+            <h4>No pending tasks</h4>
+            <p>Everything is marked completed.</p>
+        `;
+        return;
+    }
 
     output.className = "rx-plan-loading";
     output.innerHTML = `
         <div class="rx-loader"></div>
         <h4>Creating your rescue plan...</h4>
-        <p>DeadlineRX is checking task urgency, time left, and workload.</p>
+        <p>DeadlineRX is checking task urgency, progress, strictness notes, and available time.</p>
     `;
 
     try {
@@ -244,8 +380,9 @@ async function generateAiPlan() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                tasks: deadlineRxTasks,
-                available_hours_today: availableHours
+                tasks: pendingTasks,
+                available_hours_today: availableHours,
+                extra_ai_context: extraContext
             })
         });
 
@@ -273,95 +410,26 @@ async function generateAiPlan() {
         `;
     }
 }
+
 function renderAiPlanText(plan) {
     const safePlan = escapeHtml(plan);
-
-    const lines = safePlan
-        .split("\n")
-        .map(line => line.trim())
-        .filter(line => line.length > 0);
-
-    let priorityLines = [];
-    let suggestedLines = [];
-    let importantLines = [];
-    let currentSection = "summary";
-
-    lines.forEach(line => {
-        const lower = line.toLowerCase();
-
-        if (lower.includes("priority order")) {
-            currentSection = "priority";
-            return;
-        }
-
-        if (lower.includes("suggested plan")) {
-            currentSection = "suggested";
-            return;
-        }
-
-        if (lower.includes("important")) {
-            currentSection = "important";
-            importantLines.push(line.replace(/^Important:\s*/i, ""));
-            return;
-        }
-
-        if (currentSection === "priority") {
-            priorityLines.push(line);
-        } else if (currentSection === "suggested") {
-            suggestedLines.push(line.replace(/^-/, "").trim());
-        } else if (currentSection === "important") {
-            importantLines.push(line);
-        }
-    });
-
-    const topTask = priorityLines.length ? priorityLines[0].replace(/^\d+\.\s*/, "") : "No priority task found";
 
     return `
         <div class="rx-plan-card">
             <div class="rx-plan-top">
-                <div>
-                    <span class="rx-chip danger">Today’s Focus</span>
-                    <h3>${topTask}</h3>
-                    <p>This is the task DeadlineRX recommends handling first.</p>
-                </div>
+                <span class="rx-chip danger">Generated Plan</span>
+                <h3>Today’s Rescue Strategy</h3>
+                <p>Follow this plan based on your pending teacher and personal tasks.</p>
             </div>
 
-            <div class="rx-plan-grid">
-                <div class="rx-section">
-                    <h4>Priority Order</h4>
-                    ${
-                        priorityLines.length
-                        ? `<ol>${priorityLines.map(line => `<li>${line.replace(/^\d+\.\s*/, "")}</li>`).join("")}</ol>`
-                        : `<p>No priority order available.</p>`
-                    }
-                </div>
-
-                <div class="rx-section">
-                    <h4>Action Plan</h4>
-                    ${
-                        suggestedLines.length
-                        ? `<div class="rx-timeline">${suggestedLines.map(line => `
-                            <div class="rx-timeline-item">
-                                <span></span>
-                                <p>${line}</p>
-                            </div>
-                        `).join("")}</div>`
-                        : `<p>No suggested plan available.</p>`
-                    }
-                </div>
+            <div class="rx-section">
+                <h4>DeadlineRX Plan</h4>
+                <div style="white-space: pre-wrap; line-height: 1.7; color: #334155;">${safePlan}</div>
             </div>
-
-            ${
-                importantLines.length
-                ? `<div class="rx-warning-box">
-                    <strong>Damage-control advice</strong>
-                    <p>${importantLines.join(" ")}</p>
-                </div>`
-                : ""
-            }
         </div>
     `;
 }
+
 function getRiskColor(level) {
     switch (level) {
         case "Critical":

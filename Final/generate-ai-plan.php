@@ -16,6 +16,7 @@ $studentName = $_SESSION['student_name'] ?? 'Student';
 $input = json_decode(file_get_contents('php://input'), true);
 $tasks = $input['tasks'] ?? [];
 $availableHoursToday = (float)($input['available_hours_today'] ?? 3);
+$extraContext = trim($input['extra_ai_context'] ?? '');
 
 if (empty($tasks)) {
     echo json_encode(['success' => false, 'message' => 'No tasks found for planning']);
@@ -146,6 +147,9 @@ You are DeadlineRX, an academic deadline rescue assistant for students.
 Student name: {$studentName}
 Available study/work time today: {$availableHoursToday} hours.
 
+Extra student context:
+{$extraContext}
+
 Tasks:
 " . json_encode($taskSummary, JSON_PRETTY_PRINT) . "
 
@@ -153,13 +157,17 @@ Create a practical last-minute rescue plan.
 
 Rules:
 1. Prioritize tasks by deadline closeness, risk score, weightage, and pending work.
-2. Give a clear priority order.
-3. Give a time-block plan for today.
-4. Mention what minimum version should be completed first.
-5. Mention what can wait.
-6. If everything cannot be completed, be honest and suggest damage-control.
-7. Keep tone supportive but realistic.
-8. Do not give generic motivation. Give actionable steps.
+2. Consider whether the task is teacher-given or student personal.
+3. Consider the student's extra context seriously.
+4. If the teacher is strict, prioritize avoiding late submission.
+5. If late submission is acceptable, balance marks, test preparation, and workload realistically.
+6. Give a clear priority order.
+7. Give a time-block plan for today.
+8. Mention what minimum version should be completed first.
+9. Mention what can wait.
+10. If everything cannot be completed, be honest and suggest damage-control.
+11. Keep tone supportive but realistic.
+12. Do not give generic motivation. Give actionable steps.
 ";
 
 $planText = callGemini($prompt);

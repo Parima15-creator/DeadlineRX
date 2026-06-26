@@ -24,9 +24,11 @@ if (!$classId && $className) {
     $stmtClass->bind_param("s", $className);
     $stmtClass->execute();
     $resClass = $stmtClass->get_result();
+
     if ($rowClass = $resClass->fetch_assoc()) {
         $classId = (int)$rowClass['Class_ID'];
     }
+
     $stmtClass->close();
 }
 
@@ -36,24 +38,19 @@ if (!$classId) {
 }
 
 function makeTaskId($prefix, $row) {
-    $idCandidates = [
-        'Assignment_ID', 'assignment_id', 'Assign_ID', 'ID',
-        'Test_ID', 'test_id'
-    ];
-
-    foreach ($idCandidates as $key) {
-        if (isset($row[$key]) && $row[$key] !== '') {
-            return $prefix . '_' . $row[$key];
-        }
+    if ($prefix === 'assignment' && isset($row['Assignment_ID'])) {
+        return 'assignment_' . $row['Assignment_ID'];
     }
 
-    $raw = $prefix . '|' .
-        ($row['Subject'] ?? '') . '|' .
-        ($row['Title'] ?? $row['Test_Title'] ?? '') . '|' .
-        ($row['Due_Date'] ?? $row['Test_Date'] ?? '') . '|' .
-        ($row['Class_ID'] ?? '');
+    if ($prefix === 'test' && isset($row['Test_ID'])) {
+        return 'test_' . $row['Test_ID'];
+    }
 
-    return $prefix . '_' . md5($raw);
+    if ($prefix === 'personal' && isset($row['Personal_Task_ID'])) {
+        return 'personal_' . $row['Personal_Task_ID'];
+    }
+
+    return $prefix . '_' . md5(json_encode($row));
 }
 
 function fetchProgressMap($conn, $studentEmail) {
@@ -76,7 +73,7 @@ function fetchProgressMap($conn, $studentEmail) {
 $progressMap = fetchProgressMap($conn, $studentEmail);
 $tasks = [];
 
-/* Assignments */
+/* 1. Teacher Assignments */
 $stmtA = $conn->prepare("SELECT * FROM assignment WHERE Class_ID = ? ORDER BY Due_Date ASC");
 $stmtA->bind_param("i", $classId);
 $stmtA->execute();
@@ -90,6 +87,7 @@ while ($row = $resA->fetch_assoc()) {
     $task = [
         'task_id' => $taskId,
         'task_type' => 'assignment',
+        'source' => 'teacher',
         'title' => $row['Title'] ?? 'Assignment',
         'subject' => $row['Subject'] ?? '',
         'deadline' => isset($row['Due_Date']) ? date('Y-m-d', strtotime($row['Due_Date'])) : '',
@@ -107,9 +105,10 @@ while ($row = $resA->fetch_assoc()) {
     $task['risk'] = calculateDeadlineRisk($task);
     $tasks[] = $task;
 }
+
 $stmtA->close();
 
-/* Tests */
+/* 2. Teacher Tests */
 $stmtT = $conn->prepare("SELECT * FROM test WHERE Class_ID = ? ORDER BY Test_Date ASC");
 $stmtT->bind_param("i", $classId);
 $stmtT->execute();
@@ -125,6 +124,7 @@ while ($row = $resT->fetch_assoc()) {
     $task = [
         'task_id' => $taskId,
         'task_type' => 'test',
+        'source' => 'teacher',
         'title' => $title,
         'subject' => $row['Subject'] ?? '',
         'deadline' => isset($row['Test_Date']) ? date('Y-m-d', strtotime($row['Test_Date'])) : '',
@@ -142,18 +142,66 @@ while ($row = $resT->fetch_assoc()) {
     $task['risk'] = calculateDeadlineRisk($task);
     $tasks[] = $task;
 }
+
 $stmtT->close();
+
+/* 3. Student Personal Tasks */
+$stmtP = $conn->prepare("
+    SELECT * FROM student_personal_tasks 
+    WHERE student_email = ? 
+    ORDER BY Due_Date ASC
+");
+$stmtP->bind_param("s", $studentEmail);
+$stmtP->execute();
+$resP = $stmtP->get_result();
+
+while ($row = $resP->fetch_assoc()) {
+    $taskId = makeTaskId('personal', $row);
+    $mapKey = 'personal_' . $taskId;
+    $progress = $progressMap[$mapKey] ?? [];
+
+    $isCompleted = (int)($row['Is_Completed'] ?? 0);
+
+    $task = [
+        'task_id' => $taskId,
+        'task_type' => 'personal',
+        'source' => 'student',
+        'title' => $row['Title'] ?? 'Personal Task',
+        'subject' => $row['Subject'] ?? 'Personal Task',
+        'deadline' => isset($row['Due_Date']) ? date('Y-m-d', strtotime($row['Due_Date'])) : '',
+        'difficulty' => (int)($row['Difficulty_Index'] ?? 5),
+        'weightage' => (float)($row['Weightage'] ?? 0),
+        'pages' => 0,
+        'description' => $row['Description'] ?? '',
+        'completion_percentage' => (int)($progress['completion_percentage'] ?? ($isCompleted ? 100 : 0)),
+        'estimated_hours_left' => (float)($progress['estimated_hours_left'] ?? $row['Estimated_Hours'] ?? 1),
+        'available_hours_today' => (float)($progress['available_hours_today'] ?? 0),
+        'status' => $progress['status'] ?? ($isCompleted ? 'completed' : 'not_started'),
+        'is_completed' => (int)($progress['is_completed'] ?? $isCompleted)
+    ];
+
+    $task['risk'] = calculateDeadlineRisk($task);
+    $tasks[] = $task;
+}
+
+$stmtP->close();
 
 usort($tasks, function($a, $b) {
     $aDone = (int)$a['is_completed'];
     $bDone = (int)$b['is_completed'];
 
-    if ($aDone !== $bDone) return $aDone - $bDone;
+    if ($aDone !== $bDone) {
+        return $aDone - $bDone;
+    }
 
-    $dateCompare = strcmp($a['deadline'], $b['deadline']);
-    if ($dateCompare !== 0) return $dateCompare;
+    $riskA = $a['risk']['score'] ?? 0;
+    $riskB = $b['risk']['score'] ?? 0;
 
-    return ($b['risk']['score'] ?? 0) <=> ($a['risk']['score'] ?? 0);
+    if ($riskA !== $riskB) {
+        return $riskB - $riskA;
+    }
+
+    return strcmp($a['deadline'], $b['deadline']);
 });
 
 echo json_encode([
