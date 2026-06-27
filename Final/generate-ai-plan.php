@@ -23,19 +23,68 @@ if (empty($tasks)) {
     exit();
 }
 
-function localFallbackPlan($tasks, $availableHoursToday) {
+function localFallbackPlan($tasks, $availableHoursToday, $extraContext = '') {
+    $now = new DateTime();
+
+    foreach ($tasks as &$task) {
+        $deadline = $task['deadline'] ?? '';
+        $riskScore = (int)($task['risk']['score'] ?? 0);
+        $weightage = (float)($task['weightage'] ?? 0);
+        $difficulty = (int)($task['difficulty'] ?? 5);
+        $description = strtolower(($task['description'] ?? '') . ' ' . ($task['title'] ?? '') . ' ' . $extraContext);
+
+        $deadlineBoost = 0;
+        if ($deadline) {
+            $deadlineObj = new DateTime($deadline . ' 23:59:59');
+            $daysLeft = floor(($deadlineObj->getTimestamp() - $now->getTimestamp()) / 86400);
+
+            if ($daysLeft < 0) {
+                $deadlineBoost = 80;
+            } elseif ($daysLeft == 0) {
+                $deadlineBoost = 70;
+            } elseif ($daysLeft == 1) {
+                $deadlineBoost = 60;
+            } elseif ($daysLeft <= 2) {
+                $deadlineBoost = 45;
+            } elseif ($daysLeft <= 7) {
+                $deadlineBoost = 25;
+            }
+        }
+
+        $contextBoost = 0;
+
+        $urgentWords = [
+            'tomorrow', 'today', 'urgent', 'exhibition', 'display',
+            'presentation', 'viva', 'submit', 'strict', 'marks',
+            'deadline', 'important', 'competition'
+        ];
+
+        foreach ($urgentWords as $word) {
+            if (str_contains($description, $word)) {
+                $contextBoost += 12;
+            }
+        }
+
+        if (($task['task_type'] ?? '') === 'personal' && $contextBoost > 0) {
+            $contextBoost += 20;
+        }
+
+        $task['priority_score'] =
+            $riskScore +
+            $deadlineBoost +
+            $contextBoost +
+            ($weightage * 1.5) +
+            ($difficulty * 2);
+    }
+    unset($task);
+
     usort($tasks, function($a, $b) {
         $aDone = (int)($a['is_completed'] ?? 0);
         $bDone = (int)($b['is_completed'] ?? 0);
 
         if ($aDone !== $bDone) return $aDone - $bDone;
 
-        $riskA = $a['risk']['score'] ?? 0;
-        $riskB = $b['risk']['score'] ?? 0;
-
-        if ($riskA !== $riskB) return $riskB - $riskA;
-
-        return strcmp($a['deadline'] ?? '', $b['deadline'] ?? '');
+        return ($b['priority_score'] ?? 0) <=> ($a['priority_score'] ?? 0);
     });
 
     $pending = array_filter($tasks, function($task) {
@@ -48,12 +97,18 @@ function localFallbackPlan($tasks, $availableHoursToday) {
 
     $plan = "DeadlineRX Rescue Plan\n\n";
     $plan .= "Available time today: {$availableHoursToday} hours\n\n";
+
+    if ($extraContext !== '') {
+        $plan .= "Student context considered: {$extraContext}\n\n";
+    }
+
     $plan .= "Priority Order:\n";
 
     $count = 1;
     foreach ($pending as $task) {
         $risk = $task['risk']['level'] ?? 'Unknown';
-        $plan .= "{$count}. {$task['title']} ({$task['subject']}) - {$risk}, due {$task['deadline']}\n";
+        $source = ($task['task_type'] ?? '') === 'personal' ? 'Personal Task' : 'Teacher Task';
+        $plan .= "{$count}. {$task['title']} ({$source}) - {$risk}, due {$task['deadline']}\n";
         $count++;
     }
 
@@ -63,14 +118,27 @@ function localFallbackPlan($tasks, $availableHoursToday) {
     foreach ($pending as $task) {
         if ($remaining <= 0) break;
 
-        $hours = (float)($task['risk']['estimated_hours_left'] ?? $task['estimated_hours_left'] ?? 1);
+        $hours = (float)($task['estimated_hours_left'] ?? 0);
+        if ($hours <= 0) {
+            $hours = (float)($task['risk']['estimated_hours_left'] ?? 1);
+        }
+
         $block = min($remaining, max(0.5, $hours));
 
-        $plan .= "- Spend about {$block} hour(s) on {$task['title']}. Focus on the minimum submit-worthy version first.\n";
+        $title = $task['title'];
+        $description = strtolower($task['description'] ?? '');
+
+        if (str_contains($description, 'exhibition') || str_contains($description, 'display')) {
+            $plan .= "- Spend about {$block} hour(s) on {$title} first because it is needed for exhibition/display and has a real-world deadline.\n";
+        } else {
+            $plan .= "- Spend about {$block} hour(s) on {$title}. Focus on the minimum submit-worthy version first.\n";
+        }
+
         $remaining -= $block;
     }
 
-    $plan .= "\nImportant: If any task cannot be fully completed, finish the highest-mark and closest-deadline parts first. Avoid spending time on decoration or formatting until the core answers/code/content are done.";
+    $plan .= "\nDamage-control advice:\n";
+    $plan .= "If everything cannot be completed, do the task with the nearest real consequence first. Personal event deadlines like exhibition/display should not be ignored just because they are not teacher-given. Then complete the minimum required version of academic submissions.";
 
     return $plan;
 }
@@ -127,18 +195,20 @@ function callGemini($prompt) {
 $taskSummary = [];
 foreach ($tasks as $task) {
     $taskSummary[] = [
-        'type' => $task['task_type'] ?? '',
-        'title' => $task['title'] ?? '',
-        'subject' => $task['subject'] ?? '',
-        'deadline' => $task['deadline'] ?? '',
-        'difficulty' => $task['difficulty'] ?? '',
-        'weightage' => $task['weightage'] ?? '',
-        'pages' => $task['pages'] ?? '',
-        'completion_percentage' => $task['completion_percentage'] ?? 0,
-        'estimated_hours_left' => $task['estimated_hours_left'] ?? 0,
-        'risk_level' => $task['risk']['level'] ?? '',
-        'risk_score' => $task['risk']['score'] ?? ''
-    ];
+    'type' => $task['task_type'] ?? '',
+    'source' => $task['source'] ?? '',
+    'title' => $task['title'] ?? '',
+    'subject' => $task['subject'] ?? '',
+    'deadline' => $task['deadline'] ?? '',
+    'difficulty' => $task['difficulty'] ?? '',
+    'weightage' => $task['weightage'] ?? '',
+    'pages' => $task['pages'] ?? '',
+    'description' => $task['description'] ?? '',
+    'completion_percentage' => $task['completion_percentage'] ?? 0,
+    'estimated_hours_left' => $task['estimated_hours_left'] ?? 0,
+    'risk_level' => $task['risk']['level'] ?? '',
+    'risk_score' => $task['risk']['score'] ?? ''
+];
 }
 
 $prompt = "
@@ -168,12 +238,15 @@ Rules:
 10. If everything cannot be completed, be honest and suggest damage-control.
 11. Keep tone supportive but realistic.
 12. Do not give generic motivation. Give actionable steps.
+13. Personal tasks can be more urgent than teacher tasks if they have a real-world event deadline.
+14. If a personal task mentions exhibition, display, competition, presentation, or tomorrow, treat it as high priority.
+15. Do not blindly prioritize only academic assignments. Explain why a personal task may come first.
 ";
 
 $planText = callGemini($prompt);
 
 if (!$planText) {
-    $planText = localFallbackPlan($tasks, $availableHoursToday);
+    $planText = localFallbackPlan($tasks, $availableHoursToday, $extraContext);
 }
 
 if ($studentEmail) {

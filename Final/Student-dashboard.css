@@ -935,3 +935,6 @@ body {
 .task-uncomplete-btn:hover {
     background: #fde68a;
 }
+.dot-personal {
+    background: #10b981;
+}

@@ -111,7 +111,16 @@ function renderCalendar(containerId, options) {
       // Indicators
       if (dayAssignments.length > 0 || dayTests.length > 0 || dayEvents.length > 0 || locked.locked) {
         html += '<div class="calendar-indicators">';
-        if (dayAssignments.length > 0) html += '<span class="calendar-dot dot-assignment"></span>';
+        const normalAssignments = dayAssignments.filter(a => a.type !== "personal");
+        const personalTasks = dayAssignments.filter(a => a.type === "personal");
+
+        if (normalAssignments.length > 0) {
+            html += `<span class="calendar-dot dot-assignment"></span>`;
+        }
+
+        if (personalTasks.length > 0) {
+            html += `<span class="calendar-dot dot-personal"></span>`;
+        }
         if (dayTests.length > 0) html += '<span class="calendar-dot dot-test"></span>';
         if (dayEvents.length > 0) html += '<span class="calendar-dot dot-event"></span>';
         if (locked.locked) html += '<span class="calendar-dot dot-locked"></span>';
@@ -132,6 +141,7 @@ function renderCalendar(containerId, options) {
     html += '  <div class="legend-item"><span class="calendar-dot dot-test"></span> Teacher Test</div>';
     html += '  <div class="legend-item"><span class="calendar-dot dot-event"></span> Holiday</div>';
     html += '  <div class="legend-item"><span class="calendar-dot dot-locked"></span> Institutional Exam (Locked)</div>';
+    html += '  <div class="legend-item"><span class="calendar-dot dot-locked"></span> Personal Task</div>';
     html += '</div>';
 
     html += '</div>';

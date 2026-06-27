@@ -74,7 +74,7 @@ $class = $_SESSION['class_name'] ?? '';
 
     <div id="view-calendar" class="dashboard-view" style="display: none;">
       <header class="header">
-        <h1 style="font-size: 1.8rem; font-weight: 700;">Academic Calendar</h1>
+        <h1 style="font-size: 1.8rem; font-weight: 700;">Calendar</h1>
       </header>
 
       <section class="tile">
@@ -96,24 +96,41 @@ $class = $_SESSION['class_name'] ?? '';
       const viewCal = document.getElementById('view-calendar');
       const viewAsgn = document.getElementById('view-assignments');
 
-      function showCalendar() {
-        viewCal.style.display = 'block';
-        viewAsgn.style.display = 'none';
+      async function showCalendar() {
+          viewCal.style.display = 'block';
+          viewAsgn.style.display = 'none';
 
-        btnCal.classList.add('active');
-        btnAsgn.classList.remove('active');
+          btnCal.classList.add('active');
+          btnAsgn.classList.remove('active');
 
-        if (typeof renderCalendar === 'function') {
-          const assignments = typeof academicAssignments !== 'undefined' ? academicAssignments : [];
-          const tests = typeof academicTests !== 'undefined' ? academicTests : [];
-          const events = typeof academicEvents !== 'undefined' ? academicEvents : [];
+          if (typeof loadDeadlineRxTasks === 'function') {
+              await loadDeadlineRxTasks();
+          }
 
-          renderCalendar('student-calendar', {
-            assignments: assignments.filter(a => a.className === studentClass),
-            tests: tests.filter(t => t.className === studentClass),
-            events: events
-          });
-        }
+          if (typeof renderCalendar === 'function') {
+              const assignments = typeof academicAssignments !== 'undefined' ? academicAssignments : [];
+              const tests = typeof academicTests !== 'undefined' ? academicTests : [];
+              const events = typeof academicEvents !== 'undefined' ? academicEvents : [];
+
+              const classAssignments = assignments.filter(a => a.className === studentClass);
+              const classTests = tests.filter(t => t.className === studentClass);
+
+              const personalTasksAsAssignments = deadlineRxTasks
+                  .filter(t => t.task_type === "personal" && Number(t.is_completed) !== 1)
+                  .map(t => ({
+                      title: t.title,
+                      subject: t.subject || "Personal Task",
+                      deadline: t.deadline,
+                      className: studentClass,
+                      type: "personal"
+                  }));
+
+              renderCalendar('student-calendar', {
+                  assignments: [...classAssignments, ...personalTasksAsAssignments],
+                  tests: classTests,
+                  events: events
+              });
+          }
       }
 
       function showAssignments() {
