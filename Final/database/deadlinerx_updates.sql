@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS academic_calendar (
     Calendar_ID INT AUTO_INCREMENT PRIMARY KEY,
     Dates DATE NOT NULL,
     Events VARCHAR(255) NOT NULL,
-    Holidays ENUM('Yes', 'No') DEFAULT 'No'
+    Holidays ENUM('Yes', 'No') DEFAULT 'No',
+    UNIQUE KEY unique_calendar_event (Dates, Events)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS assignment (
@@ -77,22 +78,16 @@ CREATE TABLE IF NOT EXISTS test (
 CREATE TABLE IF NOT EXISTS student_task_progress (
     progress_id INT AUTO_INCREMENT PRIMARY KEY,
     student_email VARCHAR(150) NOT NULL,
-    task_type ENUM('assignment', 'test') NOT NULL,
+    task_type ENUM('assignment', 'test', 'personal') NOT NULL,
     task_id VARCHAR(150) NOT NULL,
     completion_percentage INT DEFAULT 0,
     estimated_hours_left DECIMAL(5,2) DEFAULT 0,
     available_hours_today DECIMAL(5,2) DEFAULT 0,
     status ENUM('not_started', 'in_progress', 'completed') DEFAULT 'not_started',
     is_completed TINYINT(1) DEFAULT 0,
+    is_hidden TINYINT(1) DEFAULT 0,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY unique_student_task (student_email, task_type, task_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS ai_plans (
-    plan_id INT AUTO_INCREMENT PRIMARY KEY,
-    student_email VARCHAR(150) NOT NULL,
-    plan_text LONGTEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS student_personal_tasks (
@@ -109,13 +104,21 @@ CREATE TABLE IF NOT EXISTS student_personal_tasks (
     Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS ai_plans (
+    plan_id INT AUTO_INCREMENT PRIMARY KEY,
+    student_email VARCHAR(150) NOT NULL,
+    plan_text LONGTEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 INSERT INTO department (Department_ID, Department_Name) VALUES
 (1, 'Computer Department'),
 (2, 'Civil Department'),
 (3, 'Mechanical Department'),
 (4, 'Electronics and Computer Science Department'),
 (5, 'Science and Humanities Department')
-ON DUPLICATE KEY UPDATE Department_Name = VALUES(Department_Name);
+ON DUPLICATE KEY UPDATE 
+Department_Name = VALUES(Department_Name);
 
 INSERT INTO class (Class_ID, Class_Name, Department_ID) VALUES
 (1, 'FE COMP 1', 1),
@@ -124,20 +127,20 @@ INSERT INTO class (Class_ID, Class_Name, Department_ID) VALUES
 (4, 'SE COMP 2', 1),
 (5, 'TE COMP 1', 1),
 (6, 'BE COMP 1', 1)
-ON DUPLICATE KEY UPDATE Class_Name = VALUES(Class_Name), Department_ID = VALUES(Department_ID);
+ON DUPLICATE KEY UPDATE 
+Class_Name = VALUES(Class_Name), 
+Department_ID = VALUES(Department_ID);
 
 INSERT INTO teacher (Username, College_Email_ID, Department_ID, Password) VALUES
-('Amey Tilve', 'amey.tilve@dbcegoa.ac.in', 1, '1234'),
-('Gaurang Patkar', 'gaurang.patkar@dbcegoa.ac.in', 1, '1234')
+('pqr', 'pqr@dbcegoa.ac.in', 1, '1234'),
+('xyz', 'xyz@dbcegoa.ac.in', 1, '1234')
 ON DUPLICATE KEY UPDATE
 Username = VALUES(Username),
 Department_ID = VALUES(Department_ID),
 Password = VALUES(Password);
 
 INSERT INTO student (Username, College_Email_ID, Department_ID, Class_ID, Password) VALUES
-('Parima Tendulkar', '2414047@dbcegoa.ac.in', 1, 3, '1234'),
-('Megha Gobre', '2414038@dbcegoa.ac.in', 1, 3, '1234'),
-('Nirat Nayak', '2414046@dbcegoa.ac.in', 1, 3, '1234')
+('Pari', '2414@dbcegoa.ac.in', 1, 3, '1234')
 ON DUPLICATE KEY UPDATE
 Username = VALUES(Username),
 Department_ID = VALUES(Department_ID),
@@ -150,9 +153,16 @@ INSERT INTO academic_calendar (Dates, Events, Holidays) VALUES
 ('2026-04-20', 'IT/ISA Exam Begins', 'No'),
 ('2026-04-21', 'IT/ISA Exam', 'No'),
 ('2026-04-22', 'IT/ISA Exam Ends', 'No'),
-('2026-05-01', 'Labour Day', 'Yes');
-
-ALTER TABLE student_task_progress 
-MODIFY task_type ENUM('assignment', 'test', 'personal') NOT NULL;
+('2026-05-01', 'Labour Day', 'Yes'),
+('2026-06-07', 'Sunday Holiday', 'Yes'),
+('2026-06-14', 'Sunday Holiday', 'Yes'),
+('2026-06-21', 'Sunday Holiday', 'Yes'),
+('2026-06-28', 'Sunday Holiday', 'Yes'),
+('2026-07-05', 'Sunday Holiday', 'Yes'),
+('2026-07-12', 'Sunday Holiday', 'Yes'),
+('2026-07-19', 'Sunday Holiday', 'Yes'),
+('2026-07-26', 'Sunday Holiday', 'Yes')
+ON DUPLICATE KEY UPDATE
+Holidays = VALUES(Holidays);
 
 COMMIT;
