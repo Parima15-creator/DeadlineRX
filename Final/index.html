@@ -1,190 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DeadlineRX</title>
-  <style>
-    :root {
-      --primary: #6366f1;
-      --slate-700: #334155;
-      --slate-500: #64748b;
-      --bg-subtle: #fbfcfe;
-    }
-
-    body {
-      background-color: var(--bg-subtle);
-      margin: 0;
-      font-family: 'Inter', -apple-system, sans-serif;
-      color: var(--slate-700);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* --- REFINED LIGHTWEIGHT HEADER --- */
-    .hero-header {
-      padding: 6rem 1rem 4rem;
-      text-align: center;
-      max-width: 900px;
-    }
-
-    .logo-container {
-      width: 52px;
-      height: 52px;
-      margin: 0 auto 2rem;
-      background: #ffffff;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 0, 0, 0.04);
-    }
-
-    .hero-header h1 {
-      /* Reduced from 800 weight to 600 or 500 for a lighter look */
-      font-weight: 500; 
-      font-size: 2.75rem;
-      margin: 0;
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-      /* Soft gradient instead of pure black */
-      background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
-      background-clip: text; 
-    /* Keep the webkit version for browser compatibility */
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .hero-header p {
-      color: var(--slate-500);
-      font-size: 1.15rem;
-      font-weight: 400;
-      margin-top: 1.25rem;
-      max-width: 540px;
-      margin-left: auto;
-      margin-right: auto;
-      line-height: 1.6;
-    }
-
-    /* --- PORTAL CARDS --- */
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 2rem;
-      width: 100%;
-      max-width: 1000px;
-      padding: 0 2rem 5rem;
-    }
-
-    .portal-card {
-      background: #ffffff;
-      border-radius: 24px;
-      padding: 3rem 2rem;
-      border: 1px solid #f1f5f9;
-      text-decoration: none !important;
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    .portal-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
-      border-color: #e2e8f0;
-    }
-
-    .icon-wrapper {
-      width: 64px;
-      height: 64px;
-      background: #f8fafc;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 1.5rem;
-      color: var(--primary);
-    }
-
-    .portal-card h3 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #1e293b;
-      margin: 0 0 0.5rem;
-    }
-
-    .portal-card p {
-      color: var(--slate-500);
-      text-align: center;
-      font-size: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .portal-btn {
-      width: 100%;
-      padding: 0.8rem;
-      border-radius: 12px;
-      font-weight: 500;
-      background: #f1f5f9;
-      color: #64748b;
-      transition: all 0.2s ease;
-      text-align: center;
-    }
-
-    .portal-card:hover .portal-btn {
-      background: var(--primary);
-      color: #ffffff;
-    }
-
-    footer {
-      padding-bottom: 3rem;
-      color: #94a3b8;
-      font-size: 0.85rem;
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
 </head>
 <body>
+  <main class="page">
+    <div class="orb orb-left"></div>
+    <div class="orb orb-right"></div>
+    <div class="grid-glow"></div>
 
-  <header class="hero-header">
-    <div class="logo-container">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-      </svg>
-    </div>
+    <nav class="navbar">
+      <a href="index.html" class="brand" aria-label="DeadlineRX Home">
+        <div class="brand-mark">
+          <span class="brand-pulse"></span>
+          <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="logoGradient" x1="10" y1="10" x2="70" y2="70" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#6366F1"/><stop offset="0.55" stop-color="#7C3AED"/><stop offset="1" stop-color="#A855F7"/>
+              </linearGradient>
+              <linearGradient id="boltGradient" x1="38" y1="31" x2="62" y2="68" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FBBF24"/><stop offset="1" stop-color="#F97316"/>
+              </linearGradient>
+            </defs>
+            <rect x="13" y="10" width="38" height="55" rx="12" fill="white" stroke="url(#logoGradient)" stroke-width="5"/>
+            <path d="M23 25H40" stroke="url(#logoGradient)" stroke-width="5" stroke-linecap="round"/>
+            <path d="M23 37H37" stroke="url(#logoGradient)" stroke-width="5" stroke-linecap="round"/>
+            <path d="M23 49H33" stroke="url(#logoGradient)" stroke-width="5" stroke-linecap="round"/>
+            <path d="M52 17C60.2 17 66 22.6 66 30.3C66 38 60.2 43.5 52 43.5H46V17H52Z" fill="url(#logoGradient)"/>
+            <path d="M46 17V65" stroke="url(#logoGradient)" stroke-width="6" stroke-linecap="round"/>
+            <path d="M53 43.5L67 65" stroke="url(#logoGradient)" stroke-width="6" stroke-linecap="round"/>
+            <path d="M55 43L50 52H56L52 70L69 49H61L66 43H55Z" fill="url(#boltGradient)"/>
+          </svg>
+        </div>
+        <div><strong>DeadlineRX</strong><span>AI Deadline Rescue Planner</span></div>
+      </a>
+      <div class="nav-actions">
 
-    <h1>DeadlineRX</h1>
-    <p>An AI-powered academic rescue planner that turns assignment and test overload into a clear, personalized action plan.</p>
-  </header>
-
-  <main class="card-grid">
-    <a href="Login/teacher-login.html" class="portal-card">
-      <div class="icon-wrapper">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
-        </svg>
+        <span class="track-pill">The Last-Minute Life Saver</span>
       </div>
-      <h3>Faculty Portal</h3>
-      <p>Manage curriculum tests and monitor class bandwidth.</p>
-      <div class="portal-btn">Teacher Login</div>
-    </a>
+    </nav>
 
-    <a href="Login/student-login.html" class="portal-card">
-      <div class="icon-wrapper">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/>
-        </svg>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="hero-badge"><span>⚡</span>AI-powered academic rescue system</div>
+        <h1>One platform for academic planning.<span>Powered by DeadlineRX.</span></h1>
+        <p>
+        Faculty can add assignments and tests, while students can track class tasks,
+        add private personal tasks, update progress, and generate AI-powered rescue plans.
+      </p>
+        
+        <div class="feature-row"><span>Progress-aware planning</span><span>Personal task rescue</span><span>Risk scoring</span><span>AI time blocks</span></div>
       </div>
-      <h3>Student Portal</h3>
-      <p>View personal deadlines and stay organized.</p>
-      <div class="portal-btn">Student Login</div>
-    </a>
+
+      <div class="hero-visual">
+        <div class="dashboard-card">
+          <div class="card-top"><div><span class="mini-label">DeadlineRX Live Plan</span><h3>Today’s Rescue Strategy</h3></div><span class="risk-chip">High Risk</span></div>
+          <div class="priority-card urgent"><div class="priority-icon">1</div><div><strong>Painting for Exhibition</strong><p>Due tomorrow · Personal task · Real-world deadline</p></div></div>
+          <div class="priority-card"><div class="priority-icon">2</div><div><strong>SE Implementation</strong><p>Due soon · 50% done · 3.5 hours left</p></div></div>
+          <div class="time-plan"><div><span>Now</span><strong>Finish display work</strong></div><div><span>Next</span><strong>Minimum submit-worthy assignment</strong></div></div>
+        </div>
+        <div class="floating-card float-one"><strong>3h</strong><span>available today</span></div>
+        <div class="floating-card float-two"><strong>92%</strong><span>panic reduced</span></div>
+      </div>
+    </section>
+
+    <section class="portal-grid">
+      <div class="portal-card faculty-card"><div class="portal-content"><div class="portal-icon faculty-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg></div><h2>Faculty Portal</h2><p>Add assignments and tests for a class so students can receive smart, personalized deadline rescue plans.</p><a class="login-btn" href="Login/teacher-login.html">Faculty Login →</a></div></div>
+      <div class="portal-card student-card"><div class="portal-content"><div class="portal-icon student-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m22 10-10-5-10 5 10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg></div><h2>Student Portal</h2><p>Track teacher tasks, add private personal tasks, update progress, and generate your AI rescue plan.</p><a class="login-btn" href="Login/student-login.html">Student Login →</a></div></div>
+    </section>
+    <p class="bottom-note">DeadlineRX acts like a prescription for academic deadline stress.</p>
   </main>
-
-  <footer>
-    &copy; 2026 DeadlineRX System.
-  </footer>
-
 </body>
 </html>
