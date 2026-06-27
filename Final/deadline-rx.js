@@ -27,12 +27,36 @@ function injectPersonalTaskPanel() {
         </div>
 
         <div class="rx-personal-form">
-            <input type="text" id="personalTitle" placeholder="Task title e.g. Revise Java Unit 3">
-            <input type="text" id="personalSubject" placeholder="Subject / category" value="Personal Task">
-            <input type="date" id="personalDueDate">
-            <input type="number" id="personalDifficulty" min="1" max="10" value="5" placeholder="Difficulty">
-            <input type="number" id="personalHours" min="0.5" step="0.5" value="1" placeholder="Hours">
-            <textarea id="personalDescription" placeholder="Description or notes"></textarea>
+
+            <div class="rx-form-group">
+                <label>Task Title</label>
+                <input type="text" id="personalTitle" placeholder="e.g. Revise Java Unit 3">
+            </div>
+
+            <div class="rx-form-group">
+                <label>Subject / Category</label>
+                <input type="text" id="personalSubject" placeholder="e.g. Java, SEPM, Personal" value="Personal Task">
+            </div>
+
+            <div class="rx-form-group">
+                <label>Due Date</label>
+                <input type="date" id="personalDueDate">
+            </div>
+
+            <div class="rx-form-group">
+                <label>Difficulty</label>
+                <input type="number" id="personalDifficulty" min="1" max="10" value="5" placeholder="1-10">
+            </div>
+
+            <div class="rx-form-group">
+                <label>Est. Hours</label>
+                <input type="number" id="personalHours" min="0.5" step="0.5" value="1" placeholder="Hours needed">
+            </div>
+
+            <div class="rx-form-group rx-description-group">
+                <label>Description / Notes</label>
+                <textarea id="personalDescription" placeholder="e.g. Only diagrams left, need to print, teacher is strict..."></textarea>
+            </div>
 
             <button onclick="addPersonalTask()" class="rx-add-task-btn">Add Personal Task</button>
         </div>
@@ -41,6 +65,7 @@ function injectPersonalTaskPanel() {
     `;
 
     parent.appendChild(personalPanel);
+    setupPlannerLocalSave();
 }
 
 function injectDeadlineRxPanel() {
@@ -169,19 +194,19 @@ function taskCardHtml(task) {
             <div class="task-progress-grid">
                 <div>
                     <label>Progress</label>
-                    <select id="progress-${task.task_id}">
+                    <select id="progress-${task.task_id}" onchange='saveTaskProgress(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})'>
                         ${progressOptions(task.completion_percentage)}
                     </select>
                 </div>
 
                 <div>
                     <label>Hours left</label>
-                    <input id="hours-${task.task_id}" type="number" min="0" step="0.5" value="${task.estimated_hours_left || ""}" placeholder="${risk.estimated_hours_left || 1}">
+                    <input id="hours-${task.task_id}" type="number" min="0" step="0.5" value="${task.estimated_hours_left || ""}" placeholder="Hours needed to finish" onblur='saveTaskProgress(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})'>
                 </div>
 
                 <div>
                     <label>Status</label>
-                    <select id="status-${task.task_id}">
+                    <select id="status-${task.task_id}" onchange='saveTaskProgress(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})'>
                         <option value="not_started" ${task.status === "not_started" ? "selected" : ""}>Not started</option>
                         <option value="in_progress" ${task.status === "in_progress" ? "selected" : ""}>In progress</option>
                         <option value="completed" ${task.status === "completed" ? "selected" : ""}>Completed</option>
@@ -194,15 +219,20 @@ function taskCardHtml(task) {
                     Save Progress
                 </button>
 
-                <button onclick='markCompleted(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})' class="task-complete-btn">
-                    ✓ Mark Completed
-                </button>
-
                 ${
-                    task.task_type === "personal"
-                    ? `<button onclick='deletePersonalTask(${JSON.stringify(task.task_id)})' class="task-delete-btn">Delete</button>`
-                    : ""
+                    Number(task.is_completed) === 1
+                    ? `<button onclick='unmarkCompleted(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})' class="task-uncomplete-btn">
+                        ↺ Unmark Completed
+                    </button>`
+                    : `<button onclick='markCompleted(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})' class="task-complete-btn">
+                        ✓ Mark Completed
+                    </button>`
                 }
+
+                ${task.task_type === "personal"
+            ? `<button onclick='deletePersonalTask(${JSON.stringify(task.task_id)})' class="task-delete-btn">Delete</button>`
+            : ""
+        }
             </div>
         </div>
     `;
@@ -351,6 +381,35 @@ async function markCompleted(taskId, taskType) {
     }
 }
 
+async function unmarkCompleted(taskId, taskType) {
+    try {
+        const res = await fetch("update-task-progress.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                task_id: taskId,
+                task_type: taskType,
+                completion_percentage: 75,
+                estimated_hours_left: 1,
+                available_hours_today: Number(document.getElementById("availableHoursToday")?.value || 3),
+                status: "in_progress"
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            await loadDeadlineRxTasks();
+        } else {
+            alert(data.message || "Could not unmark completed");
+        }
+
+    } catch (error) {
+        console.error("Unmark completed error:", error);
+        alert("Error unmarking task.");
+    }
+}
+
 async function generateAiPlan() {
     const output = document.getElementById("aiPlanOutput");
     const availableHours = Number(document.getElementById("availableHoursToday")?.value || 3);
@@ -453,4 +512,31 @@ function escapeHtml(value) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+}
+
+function setupPlannerLocalSave() {
+    const hoursInput = document.getElementById("availableHoursToday");
+    const contextBox = document.getElementById("extraAiContext");
+
+    if (hoursInput) {
+        const savedHours = localStorage.getItem("deadlineRxAvailableHours");
+        if (savedHours) {
+            hoursInput.value = savedHours;
+        }
+
+        hoursInput.addEventListener("input", function () {
+            localStorage.setItem("deadlineRxAvailableHours", hoursInput.value);
+        });
+    }
+
+    if (contextBox) {
+        const savedContext = localStorage.getItem("deadlineRxExtraContext");
+        if (savedContext) {
+            contextBox.value = savedContext;
+        }
+
+        contextBox.addEventListener("input", function () {
+            localStorage.setItem("deadlineRxExtraContext", contextBox.value);
+        });
+    }
 }

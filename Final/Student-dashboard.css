@@ -1,14 +1,14 @@
 :root {
     --aslb-blue: #6366f1;
-    /* Primary blue from portal login */
     --aslb-blue-dark: #4f46e5;
-    /* Darker blue for hover */
     --aslb-bg: #f8fafc;
     --aslb-card: #ffffff;
     --aslb-text: #1e293b;
     --aslb-muted: #64748b;
     --aslb-border: #e2e8f0;
     --aslb-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    --danger: #ef4444;
+    --success: #10b981;
 }
 
 * {
@@ -25,7 +25,8 @@ body {
     display: flex;
 }
 
-/* Sidebar Navigation */
+/* Sidebar */
+
 .sidebar {
     width: 280px;
     background: var(--aslb-card);
@@ -63,7 +64,6 @@ body {
     flex-grow: 1;
 }
 
-/* FIXED HOVER LOGIC */
 .nav-button {
     background: transparent;
     border: none;
@@ -79,10 +79,9 @@ body {
     display: block;
 }
 
-/* This ensures the button turns solid blue on hover like Image 2 */
 .nav-button:hover {
-    background-color: var(--aslb-blue) !important;
-    color: #ffffff !important;
+    background-color: var(--aslb-blue);
+    color: #ffffff;
 }
 
 .nav-button.active {
@@ -90,7 +89,7 @@ body {
     color: var(--aslb-blue);
 }
 
-/* Proper Logout Placement */
+.logout-container,
 .logout-section {
     margin-top: auto;
     padding-top: 20px;
@@ -105,11 +104,12 @@ body {
 }
 
 .logout-button:hover {
-    background-color: #ef4444 !important;
-    color: #ffffff !important;
+    background-color: var(--danger);
+    color: #ffffff;
 }
 
-/* Main Content Area */
+/* Page Layout */
+
 .main-viewport {
     flex: 1;
     padding: 40px;
@@ -122,32 +122,6 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 32px;
-}
-    
-.meter-track {
-    width: 120px;
-    height: 8px;
-    background: #f1f5f9; /* Light grey track */
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.meter-fill {
-    height: 100%;
-    background: var(--aslb-blue); /* Theme-consistent blue color */
-    border-radius: 10px;
-    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth animation */
-}
-
-.stress-card {
-    background: var(--aslb-card);
-    padding: 15px 24px;
-    border-radius: 16px;
-    border: 1px solid var(--aslb-border);
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    box-shadow: var(--aslb-shadow);
 }
 
 .tile {
@@ -167,61 +141,25 @@ body {
     text-align: center;
 }
 
-/* Calendar Styles for the Injected Script */
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    margin-top: 15px;
-}
+/* Calendar */
 
-.calendar-cell {
-    aspect-ratio: 1 / 1;
-    border: 1px solid var(--aslb-border);
-    border-radius: 8px;
-    padding: 5px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.calendar-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    margin: 1px;
-}
-
-.dot-assignment {
-    background: var(--aslb-blue);
-}
-
-.dot-test {
-    background: #ef4444;
-}
-
-.dot-event {
-    background: #f59e0b;
-}
-
-/* Premium Calendar Styling */
 .calendar-wrap {
     width: 100%;
     animation: fadeIn 0.4s ease-out;
 }
 
 .calendar-header {
-  display: flex;
-  justify-content: space-between; /* Pushes buttons to opposite sides */
-  align-items: center;
-  padding: 0 15px;
-  margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    margin-bottom: 20px;
 }
+
 .calendar-header h3 {
-  flex-grow: 1;
-  text-align: center;
-  margin: 0;
+    flex-grow: 1;
+    text-align: center;
+    margin: 0;
 }
 
 .btn-icon {
@@ -234,7 +172,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s;
 }
 
 .calendar-grid {
@@ -246,6 +183,7 @@ body {
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    margin-top: 15px;
 }
 
 .calendar-day-label {
@@ -260,22 +198,30 @@ body {
 }
 
 .calendar-cell {
-    position: relative; /* Anchor for the tooltip */
+    position: relative;
     background: #fff;
     min-height: 110px;
     border: 0.5px solid var(--aslb-border);
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-/* Hover Effect for Selectable Days */
 .calendar-cell:not(.locked):hover {
     background: #f1f5f9;
     z-index: 2;
 }
 
-/* Distinct Locked Day Styling */
 .calendar-cell.locked {
     background-color: #f8fafc;
-    background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(226, 232, 240, 0.3) 10px, rgba(226, 232, 240, 0.3) 20px);
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(226, 232, 240, 0.3) 10px,
+        rgba(226, 232, 240, 0.3) 20px
+    );
     cursor: not-allowed;
 }
 
@@ -284,11 +230,10 @@ body {
     font-size: 1rem;
 }
 
-/* Tooltip System (Hidden by default, shows on hover) */
 .tooltip {
     visibility: hidden;
     position: absolute;
-    bottom: 80px; /* Positions it above the dots */
+    bottom: 80px;
     left: 50%;
     transform: translateX(-50%);
     background: #1e293b;
@@ -299,19 +244,17 @@ body {
     z-index: 100;
     width: max-content;
     max-width: 160px;
-    box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s;
 }
 
-/* Show tooltip on hover */
 .calendar-cell:hover .tooltip {
     visibility: visible;
     opacity: 1;
 }
 
-/* Indicators Container */
 .calendar-indicators {
     display: flex;
     gap: 4px;
@@ -320,17 +263,16 @@ body {
 
 .calendar-dot {
     display: inline-block;
-    width: 8px; 
-    height: 8px; 
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
 }
 
 .dot-assignment { background: var(--aslb-blue); }
-.dot-test { background: #ef4444; }
+.dot-test { background: var(--danger); }
 .dot-event { background: #f59e0b; }
 .dot-locked { background: #94a3b8; }
 
-/* Legend at the bottom */
 .calendar-legend {
     display: flex;
     justify-content: center;
@@ -346,23 +288,12 @@ body {
     gap: 8px;
     font-size: 0.8rem;
     color: var(--aslb-muted);
-    }
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
-/* DeadlineRX AI Planner Styling */
+/* DeadlineRX Planner */
 
 .rx-ai-panel {
+    padding: 40px;
     background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
     border: 1px solid #dbe4ff;
 }
@@ -376,14 +307,17 @@ body {
 }
 
 .rx-panel-header h3 {
-    font-size: 1.7rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
     margin: 10px 0 6px;
     color: #111827;
 }
 
 .rx-panel-header p {
-    color: #64748b;
     font-size: 1rem;
+    font-weight: 400;
+    color: #64748b;
 }
 
 .rx-chip {
@@ -394,9 +328,10 @@ body {
     border-radius: 999px;
     background: #eef2ff;
     color: #4f46e5;
+    font-family: 'Inter', sans-serif;
     font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
 }
 
@@ -428,51 +363,78 @@ body {
 }
 
 .rx-control-box {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 16px;
+    display: grid;
+    grid-template-columns: 220px 1fr 260px;
+    gap: 18px;
+    align-items: end;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 18px;
-    padding: 18px;
-    margin-bottom: 22px;
+    padding: 22px;
+    margin-bottom: 26px;
 }
 
-.rx-control-box label {
+.rx-control-box label,
+.rx-form-group label,
+.task-progress-grid label {
     display: block;
-    font-size: 0.82rem;
-    font-weight: 800;
-    color: #475569;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
     margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    text-transform: none;
+    letter-spacing: 0;
 }
 
 .rx-control-box input {
-    width: 180px;
+    width: 100%;
+    height: 54px;
     padding: 12px 14px;
     border: 1px solid #cbd5e1;
     border-radius: 12px;
+    font-family: 'Inter', sans-serif;
     font-size: 1rem;
+    color: #1e293b;
     outline: none;
 }
 
-.rx-control-box input:focus {
-    border-color: #6366f1;
+.rx-context-field {
+    min-width: 0;
+}
+
+.rx-context-field textarea {
+    width: 100%;
+    height: 100px;
+    min-height: 100px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    color: #1e293b;
+    resize: vertical;
+    outline: none;
+    line-height: 1.45;
+}
+
+.rx-control-box input:focus,
+.rx-context-field textarea:focus {
+    border-color: var(--aslb-blue);
     box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
 }
 
 .rx-generate-btn {
-    padding: 13px 20px;
+    height: 54px;
+    width: 100%;
+    padding: 0 20px;
     border: none;
     border-radius: 12px;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
+    color: #ffffff;
     font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
     font-weight: 600;
-    letter-spacing: 0;
     cursor: pointer;
     box-shadow: 0 12px 25px rgba(99, 102, 241, 0.25);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -482,6 +444,8 @@ body {
     transform: translateY(-2px);
     box-shadow: 0 16px 30px rgba(99, 102, 241, 0.35);
 }
+
+/* AI Output */
 
 .rx-plan-empty,
 .rx-plan-loading,
@@ -493,15 +457,26 @@ body {
 }
 
 .rx-plan-empty {
+    min-height: 170px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-style: dashed;
     text-align: center;
     color: #64748b;
-    border-style: dashed;
 }
 
 .rx-plan-empty h4 {
+    font-size: 1.15rem;
+    font-weight: 700;
     color: #1e293b;
-    font-size: 1.2rem;
     margin: 8px 0;
+}
+
+.rx-plan-empty p {
+    font-size: 1rem;
+    color: #64748b;
 }
 
 .rx-empty-icon {
@@ -518,16 +493,10 @@ body {
     width: 34px;
     height: 34px;
     border: 4px solid #e0e7ff;
-    border-top-color: #6366f1;
+    border-top-color: var(--aslb-blue);
     border-radius: 50%;
     margin: 0 auto 12px;
     animation: rxSpin 0.8s linear infinite;
-}
-
-@keyframes rxSpin {
-    to {
-        transform: rotate(360deg);
-    }
 }
 
 .rx-plan-card {
@@ -582,33 +551,6 @@ body {
     margin-bottom: 8px;
 }
 
-.rx-timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.rx-timeline-item {
-    display: grid;
-    grid-template-columns: 18px 1fr;
-    gap: 12px;
-    align-items: start;
-}
-
-.rx-timeline-item span {
-    width: 12px;
-    height: 12px;
-    margin-top: 5px;
-    background: #6366f1;
-    border-radius: 50%;
-    box-shadow: 0 0 0 4px #e0e7ff;
-}
-
-.rx-timeline-item p {
-    color: #334155;
-    line-height: 1.5;
-}
-
 .rx-warning-box {
     background: #fff7ed;
     border: 1px solid #fed7aa;
@@ -623,33 +565,7 @@ body {
     color: #c2410c;
 }
 
-.rx-warning-box p {
-    line-height: 1.5;
-}
-
-@media (max-width: 850px) {
-    .rx-plan-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .rx-panel-header {
-        flex-direction: column;
-    }
-
-    .rx-control-box {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .rx-control-box input,
-    .rx-context-field,
-    .rx-context-field textarea,
-    .rx-generate-btn {
-        width: 100%;
-    }
-}
-
-/* DeadlineRX Personal Tasks + Progress Cards */
+/* Personal Tasks */
 
 .rx-personal-panel {
     background: #ffffff;
@@ -674,6 +590,15 @@ body {
     margin-bottom: 20px;
 }
 
+.rx-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.rx-description-group {
+    grid-column: 1 / -2;
+}
+
 .rx-personal-form input,
 .rx-personal-form textarea {
     border: 1px solid #cbd5e1;
@@ -684,22 +609,21 @@ body {
     outline: none;
 }
 
-.rx-personal-form input:focus,
-.rx-personal-form textarea:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
-}
-
 .rx-personal-form textarea {
-    grid-column: 1 / -2;
     min-height: 80px;
     resize: vertical;
+}
+
+.rx-personal-form input:focus,
+.rx-personal-form textarea:focus {
+    border-color: var(--aslb-blue);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
 }
 
 .rx-add-task-btn {
     border: none;
     border-radius: 12px;
-    background: #6366f1;
+    background: var(--aslb-blue);
     color: white;
     font-family: 'Inter', sans-serif;
     font-weight: 700;
@@ -708,7 +632,7 @@ body {
 }
 
 .rx-add-task-btn:hover {
-    background: #4f46e5;
+    background: var(--aslb-blue-dark);
 }
 
 /* Task Cards */
@@ -735,8 +659,13 @@ body {
     font-size: 1.1rem;
 }
 
-.deadline-card p {
+.deadline-card p,
+.risk-reason {
     color: #64748b;
+}
+
+.risk-reason {
+    margin: 14px 0;
 }
 
 .task-source {
@@ -767,24 +696,10 @@ body {
     white-space: nowrap;
 }
 
-.risk-reason {
-    margin: 14px 0;
-    color: #475569;
-}
-
 .task-progress-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(150px, 1fr));
     gap: 12px;
-}
-
-.task-progress-grid label {
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 800;
-    margin-bottom: 7px;
-    color: #475569;
-    text-transform: uppercase;
 }
 
 .task-progress-grid input,
@@ -825,7 +740,7 @@ body {
 }
 
 .task-complete-btn {
-    background: #10b981;
+    background: var(--success);
     color: #ffffff;
 }
 
@@ -842,40 +757,181 @@ body {
     background: #fecaca;
 }
 
-/* Extra AI Context Box */
+/* Animation + Responsive */
 
-.rx-context-field {
-    flex: 1;
-    min-width: 300px;
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.rx-context-field textarea {
-    width: 100%;
-    min-height: 80px;
-    border: 1px solid #cbd5e1;
-    border-radius: 12px;
-    padding: 12px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    resize: vertical;
-    outline: none;
+@keyframes rxSpin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-.rx-context-field textarea:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
-}
-
-@media (max-width: 900px) {
-    .rx-personal-form {
+@media (max-width: 1000px) {
+    .rx-control-box,
+    .rx-personal-form,
+    .rx-plan-grid {
         grid-template-columns: 1fr;
     }
 
-    .rx-personal-form textarea {
+    .rx-description-group {
         grid-column: auto;
+    }
+
+    .rx-generate-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 850px) {
+    body {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+
+    .main-viewport {
+        padding: 24px;
+    }
+
+    .rx-panel-header,
+    .deadline-card-top {
+        flex-direction: column;
     }
 
     .task-progress-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* FINAL UI POLISH: Personal Task + Planner Alignment + Font Fix */
+
+/* Personal task form: make description and button align cleanly */
+.rx-personal-form {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 0.8fr 0.6fr 0.6fr;
+    gap: 12px;
+    align-items: start;
+}
+
+.rx-description-group {
+    grid-column: 1 / 5;
+}
+
+.rx-description-group textarea {
+    height: 100px;
+    min-height: 100px;
+}
+
+.rx-add-task-btn {
+    grid-column: 5 / 6;
+    height: 100px;
+    align-self: end;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+/* Planner input alignment */
+.rx-control-box {
+    display: grid;
+    grid-template-columns: 240px 1fr 260px;
+    gap: 18px;
+    align-items: start;
+}
+
+.rx-control-box > div:first-child {
+    align-self: start;
+}
+
+.rx-context-field {
+    align-self: start;
+}
+
+.rx-generate-btn {
+    align-self: end;
+    height: 54px;
+}
+
+/* Make all labels normal and consistent */
+.rx-control-box label,
+.rx-form-group label,
+.task-progress-grid label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* Fix badge font: Teacher-given, Personal, Warning 55/100 */
+.task-source,
+.risk-badge,
+.rx-chip {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+/* Slightly cleaner badge look */
+.task-source {
+    padding: 6px 12px;
+}
+
+.risk-badge {
+    padding: 7px 12px;
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+    .rx-personal-form,
+    .rx-control-box {
+        grid-template-columns: 1fr;
+    }
+
+    .rx-description-group,
+    .rx-add-task-btn {
+        grid-column: auto;
+    }
+
+    .rx-add-task-btn {
+        height: 54px;
+    }
+
+    .rx-generate-btn {
+        width: 100%;
+    }
+}
+.task-uncomplete-btn {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.task-uncomplete-btn:hover {
+    background: #fde68a;
 }
