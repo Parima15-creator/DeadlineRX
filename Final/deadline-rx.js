@@ -133,7 +133,15 @@ async function loadDeadlineRxTasks() {
         }
 
         deadlineRxTasks = data.tasks || [];
+
+        // Make tasks available everywhere
+        window.deadlineRxTasks = deadlineRxTasks;
+
         renderTaskLists();
+
+        if (typeof renderMyTasksView === "function") {
+            renderMyTasksView();
+        }
 
     } catch (error) {
         console.error("Error loading DeadlineRX tasks:", error);
@@ -141,11 +149,13 @@ async function loadDeadlineRxTasks() {
 }
 
 function renderTaskLists() {
-    const assignments = deadlineRxTasks.filter(t => t.task_type === "assignment");
-    const tests = deadlineRxTasks.filter(t => t.task_type === "test");
-    const personal = deadlineRxTasks.filter(t => t.task_type === "personal");
+    const pendingTasks = deadlineRxTasks.filter(t => Number(t.is_completed) !== 1);
 
-    const activeCount = deadlineRxTasks.filter(t => Number(t.is_completed) !== 1).length;
+    const assignments = pendingTasks.filter(t => t.task_type === "assignment");
+    const tests = pendingTasks.filter(t => t.task_type === "test");
+    const personal = pendingTasks.filter(t => t.task_type === "personal");
+
+    const activeCount = pendingTasks.length;
     const countBox = document.getElementById("rxTaskCount");
 
     if (countBox) countBox.textContent = activeCount;
@@ -538,5 +548,147 @@ function setupPlannerLocalSave() {
         contextBox.addEventListener("input", function () {
             localStorage.setItem("deadlineRxExtraContext", contextBox.value);
         });
+    }
+}
+function renderMyTasksView() {
+    const container = document.getElementById("myTaskList");
+    const countBox = document.getElementById("myTaskCount");
+
+    if (!container) return;
+
+    const tasks = [...deadlineRxTasks].sort((a, b) => {
+        const aDone = Number(a.is_completed || 0);
+        const bDone = Number(b.is_completed || 0);
+
+        if (aDone !== bDone) return aDone - bDone;
+
+        const aRisk = a.risk?.score || 0;
+        const bRisk = b.risk?.score || 0;
+
+        if (aRisk !== bRisk) return bRisk - aRisk;
+
+        return String(a.deadline || "").localeCompare(String(b.deadline || ""));
+    });
+
+    const activeTasks = tasks.filter(t => Number(t.is_completed || 0) !== 1);
+
+    if (countBox) {
+        countBox.textContent = `${activeTasks.length} active task${activeTasks.length === 1 ? "" : "s"}`;
+    }
+
+    if (!tasks.length) {
+        container.className = "empty-state";
+        container.innerHTML = "No tasks found.";
+        return;
+    }
+
+    container.className = "my-task-list";
+
+    container.innerHTML = tasks.map(task => {
+        const risk = task.risk || {};
+        const riskColor = getRiskColor(risk.level);
+        const isDone = Number(task.is_completed || 0) === 1;
+
+        let typeLabel = "Teacher Assignment";
+
+        if (task.task_type === "personal") {
+            typeLabel = "Personal";
+        } else if (task.task_type === "test") {
+            typeLabel = "Teacher Test";
+        }
+
+        return `
+            <div class="my-task-row ${isDone ? "done" : ""}">
+                <div class="my-task-main">
+                    <div class="my-task-title-line">
+                        <span class="task-source ${task.task_type === "personal" ? "personal" : "teacher"}">
+                            ${typeLabel}
+                        </span>
+
+                        <span class="risk-badge" style="background:${riskColor.bg}; color:${riskColor.text};">
+                            ${escapeHtml(risk.level || "Unknown")} ${risk.score ?? 0}/100
+                        </span>
+                    </div>
+
+                    <h4>${escapeHtml(task.title)}</h4>
+
+                    <p>
+                        ${escapeHtml(task.subject || "")}
+                        • Due: ${escapeHtml(task.deadline || "No deadline")}
+                    </p>
+                </div>
+
+                <div class="my-task-progress">
+                    <div>
+                        <strong>${Number(task.completion_percentage || 0)}%</strong>
+                        <span>Progress</span>
+                    </div>
+
+                    <div>
+                        <strong>${Number(task.estimated_hours_left || 0)}h</strong>
+                        <span>Work left</span>
+                    </div>
+
+                    <div>
+                        <strong>${formatStatus(task.status)}</strong>
+                        <span>Status</span>
+                    </div>
+                </div>
+
+                <div class="my-task-actions">
+                    ${
+                        isDone
+                        ? `
+                        <button onclick='unmarkCompleted(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})' class="task-uncomplete-btn">
+                            ↺ Unmark
+                        </button>
+
+                        <button onclick='deleteCompletedTask(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})' class="task-delete-final-btn">
+                            Delete
+                        </button>
+                        `
+                        : `<button onclick='markCompleted(${JSON.stringify(task.task_id)}, ${JSON.stringify(task.task_type)})' class="task-complete-btn">
+                            ✓ Done
+                        </button>`
+                    }
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+function formatStatus(status) {
+    if (!status) return "Not started";
+
+    return String(status)
+        .replaceAll("_", " ")
+        .replace(/\b\w/g, char => char.toUpperCase());
+}
+async function deleteCompletedTask(taskId, taskType) {
+    if (!confirm("Remove this completed task from your list?")) {
+        return;
+    }
+
+    try {
+        const res = await fetch("delete-completed-task.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                task_id: taskId,
+                task_type: taskType
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            await loadDeadlineRxTasks();
+        } else {
+            alert(data.message || "Could not delete completed task.");
+        }
+
+    } catch (error) {
+        console.error("Delete completed task error:", error);
+        alert("Error deleting completed task.");
     }
 }

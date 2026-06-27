@@ -83,6 +83,9 @@ while ($row = $resA->fetch_assoc()) {
     $taskId = makeTaskId('assignment', $row);
     $mapKey = 'assignment_' . $taskId;
     $progress = $progressMap[$mapKey] ?? [];
+    if ((int)($progress['is_hidden'] ?? 0) === 1) {
+        continue;
+    }
 
     $task = [
         'task_id' => $taskId,
@@ -118,6 +121,9 @@ while ($row = $resT->fetch_assoc()) {
     $taskId = makeTaskId('test', $row);
     $mapKey = 'test_' . $taskId;
     $progress = $progressMap[$mapKey] ?? [];
+    if ((int)($progress['is_hidden'] ?? 0) === 1) {
+        continue;
+    }
 
     $title = $row['Title'] ?? $row['Test_Title'] ?? ('Test: ' . ($row['Subject'] ?? ''));
 
@@ -159,6 +165,9 @@ while ($row = $resP->fetch_assoc()) {
     $taskId = makeTaskId('personal', $row);
     $mapKey = 'personal_' . $taskId;
     $progress = $progressMap[$mapKey] ?? [];
+    if ((int)($progress['is_hidden'] ?? 0) === 1) {
+        continue;
+    }
 
     $isCompleted = (int)($row['Is_Completed'] ?? 0);
 

@@ -50,14 +50,15 @@ if (!in_array($status, ['not_started', 'in_progress', 'completed'])) {
 
 $sql = "
     INSERT INTO student_task_progress
-    (student_email, task_type, task_id, completion_percentage, estimated_hours_left, available_hours_today, status, is_completed)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    (student_email, task_type, task_id, completion_percentage, estimated_hours_left, available_hours_today, status, is_completed, is_hidden)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
     ON DUPLICATE KEY UPDATE
         completion_percentage = VALUES(completion_percentage),
         estimated_hours_left = VALUES(estimated_hours_left),
         available_hours_today = VALUES(available_hours_today),
         status = VALUES(status),
         is_completed = VALUES(is_completed),
+        is_hidden = 0,
         updated_at = CURRENT_TIMESTAMP
 ";
 

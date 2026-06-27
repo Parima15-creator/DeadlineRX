@@ -1,221 +1,62 @@
 <?php
 session_start();
-require_once 'db_config.php';
 require_once 'gemini_config.php';
 
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['student_name'])) {
-    echo json_encode(['success' => false, 'message' => 'Student not logged in']);
+$input = json_decode(file_get_contents('php://input'), true);
+
+if (!$input) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'No input received'
+    ]);
     exit();
 }
 
-$studentEmail = $_SESSION['student_email'] ?? '';
-$studentName = $_SESSION['student_name'] ?? 'Student';
-
-$input = json_decode(file_get_contents('php://input'), true);
 $tasks = $input['tasks'] ?? [];
 $availableHoursToday = (float)($input['available_hours_today'] ?? 3);
 $extraContext = trim($input['extra_ai_context'] ?? '');
+$studentName = $_SESSION['student_name'] ?? 'Student';
 
-if (empty($tasks)) {
-    echo json_encode(['success' => false, 'message' => 'No tasks found for planning']);
+$availableHoursToday = max(0.5, min(12, $availableHoursToday));
+
+$pendingTasks = array_values(array_filter($tasks, function ($task) {
+    return (int)($task['is_completed'] ?? 0) !== 1;
+}));
+
+if (empty($pendingTasks)) {
+    echo json_encode([
+        'success' => true,
+        'plan' => "TODAY'S FOCUS:\nAll tasks are completed.\n\nTIME-BLOCK PLAN:\nUse today for revision, checking submissions, and preparing for upcoming tests.\n\nDAMAGE CONTROL:\nNo damage control needed."
+    ]);
     exit();
 }
 
-function localFallbackPlan($tasks, $availableHoursToday, $extraContext = '') {
-    $now = new DateTime();
-
-    foreach ($tasks as &$task) {
-        $deadline = $task['deadline'] ?? '';
-        $riskScore = (int)($task['risk']['score'] ?? 0);
-        $weightage = (float)($task['weightage'] ?? 0);
-        $difficulty = (int)($task['difficulty'] ?? 5);
-        $description = strtolower(($task['description'] ?? '') . ' ' . ($task['title'] ?? '') . ' ' . $extraContext);
-
-        $deadlineBoost = 0;
-        if ($deadline) {
-            $deadlineObj = new DateTime($deadline . ' 23:59:59');
-            $daysLeft = floor(($deadlineObj->getTimestamp() - $now->getTimestamp()) / 86400);
-
-            if ($daysLeft < 0) {
-                $deadlineBoost = 80;
-            } elseif ($daysLeft == 0) {
-                $deadlineBoost = 70;
-            } elseif ($daysLeft == 1) {
-                $deadlineBoost = 60;
-            } elseif ($daysLeft <= 2) {
-                $deadlineBoost = 45;
-            } elseif ($daysLeft <= 7) {
-                $deadlineBoost = 25;
-            }
-        }
-
-        $contextBoost = 0;
-
-        $urgentWords = [
-            'tomorrow', 'today', 'urgent', 'exhibition', 'display',
-            'presentation', 'viva', 'submit', 'strict', 'marks',
-            'deadline', 'important', 'competition'
-        ];
-
-        foreach ($urgentWords as $word) {
-            if (str_contains($description, $word)) {
-                $contextBoost += 12;
-            }
-        }
-
-        if (($task['task_type'] ?? '') === 'personal' && $contextBoost > 0) {
-            $contextBoost += 20;
-        }
-
-        $task['priority_score'] =
-            $riskScore +
-            $deadlineBoost +
-            $contextBoost +
-            ($weightage * 1.5) +
-            ($difficulty * 2);
-    }
-    unset($task);
-
-    usort($tasks, function($a, $b) {
-        $aDone = (int)($a['is_completed'] ?? 0);
-        $bDone = (int)($b['is_completed'] ?? 0);
-
-        if ($aDone !== $bDone) return $aDone - $bDone;
-
-        return ($b['priority_score'] ?? 0) <=> ($a['priority_score'] ?? 0);
-    });
-
-    $pending = array_filter($tasks, function($task) {
-        return (int)($task['is_completed'] ?? 0) !== 1;
-    });
-
-    if (empty($pending)) {
-        return "All tasks are marked completed. Use today for revision, checking submissions, and preparing for upcoming tests.";
-    }
-
-    $plan = "DeadlineRX Rescue Plan\n\n";
-    $plan .= "Available time today: {$availableHoursToday} hours\n\n";
-
-    if ($extraContext !== '') {
-        $plan .= "Student context considered: {$extraContext}\n\n";
-    }
-
-    $plan .= "Priority Order:\n";
-
-    $count = 1;
-    foreach ($pending as $task) {
-        $risk = $task['risk']['level'] ?? 'Unknown';
-        $source = ($task['task_type'] ?? '') === 'personal' ? 'Personal Task' : 'Teacher Task';
-        $plan .= "{$count}. {$task['title']} ({$source}) - {$risk}, due {$task['deadline']}\n";
-        $count++;
-    }
-
-    $plan .= "\nSuggested Plan:\n";
-
-    $remaining = $availableHoursToday;
-    foreach ($pending as $task) {
-        if ($remaining <= 0) break;
-
-        $hours = (float)($task['estimated_hours_left'] ?? 0);
-        if ($hours <= 0) {
-            $hours = (float)($task['risk']['estimated_hours_left'] ?? 1);
-        }
-
-        $block = min($remaining, max(0.5, $hours));
-
-        $title = $task['title'];
-        $description = strtolower($task['description'] ?? '');
-
-        if (str_contains($description, 'exhibition') || str_contains($description, 'display')) {
-            $plan .= "- Spend about {$block} hour(s) on {$title} first because it is needed for exhibition/display and has a real-world deadline.\n";
-        } else {
-            $plan .= "- Spend about {$block} hour(s) on {$title}. Focus on the minimum submit-worthy version first.\n";
-        }
-
-        $remaining -= $block;
-    }
-
-    $plan .= "\nDamage-control advice:\n";
-    $plan .= "If everything cannot be completed, do the task with the nearest real consequence first. Personal event deadlines like exhibition/display should not be ignored just because they are not teacher-given. Then complete the minimum required version of academic submissions.";
-
-    return $plan;
-}
-
-function callGemini($prompt) {
-    if (GEMINI_API_KEY === 'PASTE_YOUR_GEMINI_API_KEY_HERE' || trim(GEMINI_API_KEY) === '') {
-        return null;
-    }
-
-    $url = "https://generativelanguage.googleapis.com/v1beta/models/" . GEMINI_MODEL . ":generateContent?key=" . urlencode(GEMINI_API_KEY);
-
-    $payload = [
-        "contents" => [
-            [
-                "parts" => [
-                    ["text" => $prompt]
-                ]
-            ]
-        ],
-        "generationConfig" => [
-            "temperature" => 0.4,
-            "maxOutputTokens" => 1200
-        ]
-    ];
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_POSTFIELDS => json_encode($payload),
-        CURLOPT_TIMEOUT => 30
-    ]);
-
-    $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        curl_close($ch);
-        return null;
-    }
-
-    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($status < 200 || $status >= 300) {
-        return null;
-    }
-
-    $data = json_decode($response, true);
-
-    return $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
-}
-
 $taskSummary = [];
-foreach ($tasks as $task) {
+
+foreach ($pendingTasks as $task) {
     $taskSummary[] = [
-    'type' => $task['task_type'] ?? '',
-    'source' => $task['source'] ?? '',
-    'title' => $task['title'] ?? '',
-    'subject' => $task['subject'] ?? '',
-    'deadline' => $task['deadline'] ?? '',
-    'difficulty' => $task['difficulty'] ?? '',
-    'weightage' => $task['weightage'] ?? '',
-    'pages' => $task['pages'] ?? '',
-    'description' => $task['description'] ?? '',
-    'completion_percentage' => $task['completion_percentage'] ?? 0,
-    'estimated_hours_left' => $task['estimated_hours_left'] ?? 0,
-    'risk_level' => $task['risk']['level'] ?? '',
-    'risk_score' => $task['risk']['score'] ?? ''
-];
+        'type' => $task['task_type'] ?? '',
+        'source' => $task['source'] ?? '',
+        'title' => $task['title'] ?? '',
+        'subject' => $task['subject'] ?? '',
+        'deadline' => $task['deadline'] ?? '',
+        'difficulty' => $task['difficulty'] ?? '',
+        'weightage' => $task['weightage'] ?? '',
+        'description' => $task['description'] ?? '',
+        'completion_percentage' => $task['completion_percentage'] ?? 0,
+        'estimated_work_left_hours' => $task['estimated_hours_left'] ?? 0,
+        'risk_level' => $task['risk']['level'] ?? '',
+        'risk_score' => $task['risk']['score'] ?? ''
+    ];
 }
 
 $prompt = "
-You are DeadlineRX, an academic deadline rescue assistant for students.
+You are DeadlineRX, an academic rescue planner for students.
 
-Student name: {$studentName}
-Available study/work time today: {$availableHoursToday} hours.
+Student: {$studentName}
+Available time today: {$availableHoursToday} hours
 
 Extra student context:
 {$extraContext}
@@ -223,43 +64,340 @@ Extra student context:
 Tasks:
 " . json_encode($taskSummary, JSON_PRETTY_PRINT) . "
 
-Create a practical last-minute rescue plan.
+Create a smart rescue plan.
 
-Rules:
-1. Prioritize tasks by deadline closeness, risk score, weightage, and pending work.
-2. Consider whether the task is teacher-given or student personal.
-3. Consider the student's extra context seriously.
-4. If the teacher is strict, prioritize avoiding late submission.
-5. If late submission is acceptable, balance marks, test preparation, and workload realistically.
-6. Give a clear priority order.
-7. Give a time-block plan for today.
-8. Mention what minimum version should be completed first.
-9. Mention what can wait.
-10. If everything cannot be completed, be honest and suggest damage-control.
-11. Keep tone supportive but realistic.
-12. Do not give generic motivation. Give actionable steps.
-13. Personal tasks can be more urgent than teacher tasks if they have a real-world event deadline.
-14. If a personal task mentions exhibition, display, competition, presentation, or tomorrow, treat it as high priority.
-15. Do not blindly prioritize only academic assignments. Explain why a personal task may come first.
+Important rules:
+1. Do NOT spend all available time on only one task unless it is the only urgent task.
+2. Personal tasks can be more urgent than academic tasks if they have real-world deadlines like exhibition, display, competition, presentation, tomorrow, or today.
+3. Teacher-given tasks matter because they affect marks, but personal event deadlines should not be ignored.
+4. Consider deadline, progress, estimated work left, difficulty, weightage, risk score, and student context.
+5. Allocate time realistically across the top tasks.
+6. Give minimum-version strategy, not generic motivation.
+7. If everything cannot be completed, clearly say what should be done first and what can wait.
+8. Keep the tone supportive but direct.
+
+Output exactly in this format:
+
+TODAY'S FOCUS:
+[1-2 lines]
+
+WHY THIS ORDER:
+[short reasoning]
+
+PRIORITY ORDER:
+1. [task] - [reason]
+2. [task] - [reason]
+
+TIME-BLOCK PLAN:
+- [time duration] - [task] - [specific action]
+- [time duration] - [task] - [specific action]
+
+MINIMUM VERSION:
+- [task] - [what minimum version should be finished first]
+
+CAN WAIT:
+- [what can be delayed/skipped]
+
+DAMAGE CONTROL:
+[honest advice if time is not enough]
 ";
 
-$planText = callGemini($prompt);
+$aiPlan = callGemini($prompt);
 
-if (!$planText) {
-    $planText = localFallbackPlan($tasks, $availableHoursToday, $extraContext);
+if ($aiPlan) {
+    echo json_encode([
+        'success' => true,
+        'plan' => $aiPlan
+    ]);
+    exit();
 }
 
-if ($studentEmail) {
-    $stmt = $conn->prepare("INSERT INTO ai_plans (student_email, plan_text) VALUES (?, ?)");
-    if ($stmt) {
-        $stmt->bind_param("ss", $studentEmail, $planText);
-        $stmt->execute();
-        $stmt->close();
-    }
-}
+$fallbackPlan = smartFallbackPlan($pendingTasks, $availableHoursToday, $extraContext);
 
 echo json_encode([
     'success' => true,
-    'plan' => $planText
+    'plan' => $fallbackPlan
 ]);
+exit();
+
+
+function callGemini($prompt) {
+    if (!defined('GEMINI_API_KEY') || GEMINI_API_KEY === '' || GEMINI_API_KEY === 'PASTE_YOUR_GEMINI_API_KEY_HERE') {
+        return null;
+    }
+
+    $model = defined('GEMINI_MODEL') ? GEMINI_MODEL : 'gemini-2.0-flash';
+
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/" . $model . ":generateContent?key=" . GEMINI_API_KEY;
+
+    $payload = [
+        'contents' => [
+            [
+                'parts' => [
+                    ['text' => $prompt]
+                ]
+            ]
+        ],
+        'generationConfig' => [
+            'temperature' => 0.45,
+            'topP' => 0.9,
+            'maxOutputTokens' => 1200
+        ]
+    ];
+
+    $ch = curl_init($url);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_TIMEOUT => 25
+    ]);
+
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error || !$response) {
+        return null;
+    }
+
+    $data = json_decode($response, true);
+
+    if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+        return trim($data['candidates'][0]['content']['parts'][0]['text']);
+    }
+
+    return null;
+}
+
+
+function smartFallbackPlan($tasks, $availableHoursToday, $extraContext = '') {
+    $now = new DateTime();
+
+    foreach ($tasks as &$task) {
+        $deadline = $task['deadline'] ?? '';
+        $riskScore = (int)($task['risk']['score'] ?? 0);
+        $weightage = (float)($task['weightage'] ?? 0);
+        $difficulty = (int)($task['difficulty'] ?? 5);
+        $completion = (int)($task['completion_percentage'] ?? 0);
+        $hoursLeft = (float)($task['estimated_hours_left'] ?? 0);
+
+        if ($hoursLeft <= 0) {
+            $hoursLeft = max(1, 8 - ($completion / 15));
+        }
+
+        $text = strtolower(
+            ($task['title'] ?? '') . ' ' .
+            ($task['subject'] ?? '') . ' ' .
+            ($task['description'] ?? '') . ' ' .
+            $extraContext
+        );
+
+        $daysLeft = 999;
+
+        if ($deadline) {
+            $deadlineObj = new DateTime($deadline . ' 23:59:59');
+            $secondsLeft = $deadlineObj->getTimestamp() - $now->getTimestamp();
+            $daysLeft = floor($secondsLeft / 86400);
+        }
+
+        $deadlineBoost = 0;
+
+        if ($daysLeft < 0) {
+            $deadlineBoost = 90;
+        } elseif ($daysLeft == 0) {
+            $deadlineBoost = 80;
+        } elseif ($daysLeft == 1) {
+            $deadlineBoost = 70;
+        } elseif ($daysLeft <= 2) {
+            $deadlineBoost = 55;
+        } elseif ($daysLeft <= 7) {
+            $deadlineBoost = 30;
+        }
+
+        $contextBoost = 0;
+        $urgentWords = ['today', 'tomorrow', 'urgent', 'exhibition', 'display', 'competition', 'presentation', 'viva', 'strict', 'marks', 'submit'];
+
+        foreach ($urgentWords as $word) {
+            if (strpos($text, $word) !== false) {
+                $contextBoost += 12;
+            }
+        }
+
+        if (($task['task_type'] ?? '') === 'personal' && $contextBoost > 0) {
+            $contextBoost += 25;
+        }
+
+        $pendingBoost = 100 - $completion;
+
+        $task['computed_hours_left'] = $hoursLeft;
+        $task['days_left'] = $daysLeft;
+        $task['priority_score'] =
+            $riskScore +
+            $deadlineBoost +
+            $contextBoost +
+            ($difficulty * 3) +
+            ($weightage * 1.5) +
+            ($pendingBoost * 0.35);
+    }
+
+    unset($task);
+
+    usort($tasks, function ($a, $b) {
+        return ($b['priority_score'] ?? 0) <=> ($a['priority_score'] ?? 0);
+    });
+
+    $topTask = $tasks[0];
+    $topTitle = $topTask['title'] ?? 'Top task';
+
+    $plan = "TODAY'S FOCUS:\n";
+    $plan .= "{$topTitle} should be handled first because it has the strongest combination of deadline pressure, context urgency, and remaining work.\n\n";
+
+    $plan .= "WHY THIS ORDER:\n";
+    $plan .= "DeadlineRX considered deadline closeness, progress, work hours left, difficulty, marks/weightage, and your extra context. Personal tasks with real event deadlines are treated seriously, not ignored.\n\n";
+
+    $plan .= "PRIORITY ORDER:\n";
+
+    $i = 1;
+    foreach ($tasks as $task) {
+        $source = (($task['task_type'] ?? '') === 'personal') ? 'Personal Task' : 'Teacher Task';
+        $reason = makeReason($task);
+        $plan .= "{$i}. {$task['title']} ({$source}) - {$reason}\n";
+        $i++;
+    }
+
+    $plan .= "\nTIME-BLOCK PLAN:\n";
+
+    $remaining = $availableHoursToday;
+    $blocks = allocateTimeBlocks($tasks, $availableHoursToday);
+
+    foreach ($blocks as $block) {
+        $plan .= "- {$block['hours']} hour(s) - {$block['title']} - {$block['action']}\n";
+        $remaining -= $block['hours'];
+    }
+
+    if ($remaining > 0.25) {
+        $plan .= "- {$remaining} hour(s) - Buffer - Review, upload/check files, and fix mistakes.\n";
+    }
+
+    $plan .= "\nMINIMUM VERSION:\n";
+
+    foreach (array_slice($tasks, 0, min(3, count($tasks))) as $task) {
+        $plan .= "- {$task['title']} - " . minimumVersion($task) . "\n";
+    }
+
+    $plan .= "\nCAN WAIT:\n";
+    if (count($tasks) > 2) {
+        $lastTask = end($tasks);
+        $plan .= "- Extra polishing or beautification of {$lastTask['title']} can wait until the core work is done.\n";
+    } else {
+        $plan .= "- Decoration, formatting, and perfection can wait until the core submission/display work is ready.\n";
+    }
+
+    $plan .= "\nDAMAGE CONTROL:\n";
+    $plan .= "If time runs short, finish the task with the nearest real consequence first, then complete the minimum submit-worthy version of academic work. Do not spend too much time making things perfect before the core task is ready.";
+
+    return $plan;
+}
+
+
+function allocateTimeBlocks($tasks, $availableHoursToday) {
+    $blocks = [];
+    $remaining = $availableHoursToday;
+    $taskCount = count($tasks);
+
+    foreach ($tasks as $index => $task) {
+        if ($remaining <= 0.25) {
+            break;
+        }
+
+        $hoursLeft = (float)($task['computed_hours_left'] ?? $task['estimated_hours_left'] ?? 1);
+        $title = $task['title'] ?? 'Task';
+
+        if ($taskCount === 1) {
+            $hours = min($remaining, $hoursLeft);
+        } else {
+            if ($index === 0) {
+                $maxShare = $availableHoursToday * 0.50;
+                $hours = min($hoursLeft, max(1, $maxShare));
+            } elseif ($index === 1) {
+                $maxShare = $availableHoursToday * 0.32;
+                $hours = min($hoursLeft, max(0.75, $maxShare));
+            } else {
+                $hours = min($hoursLeft, max(0.5, $remaining));
+            }
+
+            $hours = min($hours, $remaining);
+        }
+
+        $hours = round($hours * 2) / 2;
+
+        if ($hours <= 0) {
+            continue;
+        }
+
+        $blocks[] = [
+            'title' => $title,
+            'hours' => $hours,
+            'action' => actionForTask($task)
+        ];
+
+        $remaining -= $hours;
+    }
+
+    return $blocks;
+}
+
+
+function makeReason($task) {
+    $daysLeft = (int)($task['days_left'] ?? 999);
+    $completion = (int)($task['completion_percentage'] ?? 0);
+    $text = strtolower(($task['description'] ?? '') . ' ' . ($task['title'] ?? ''));
+
+    if (strpos($text, 'exhibition') !== false || strpos($text, 'display') !== false) {
+        return "real-world exhibition/display deadline, due " . ($task['deadline'] ?? '');
+    }
+
+    if ($daysLeft <= 1) {
+        return "very close deadline, due " . ($task['deadline'] ?? '');
+    }
+
+    if ($completion < 50) {
+        return "more than half is still pending, due " . ($task['deadline'] ?? '');
+    }
+
+    return "needs planned work, due " . ($task['deadline'] ?? '');
+}
+
+
+function actionForTask($task) {
+    $text = strtolower(($task['description'] ?? '') . ' ' . ($task['title'] ?? ''));
+
+    if (strpos($text, 'exhibition') !== false || strpos($text, 'display') !== false || strpos($text, 'painting') !== false) {
+        return "finish the display-ready version first, then only do touch-ups if time remains.";
+    }
+
+    if (($task['task_type'] ?? '') === 'test') {
+        return "revise high-weight concepts first, then solve quick practice questions.";
+    }
+
+    return "complete the minimum submit-worthy version first before formatting or extra decoration.";
+}
+
+
+function minimumVersion($task) {
+    $text = strtolower(($task['description'] ?? '') . ' ' . ($task['title'] ?? ''));
+
+    if (strpos($text, 'painting') !== false || strpos($text, 'exhibition') !== false || strpos($text, 'display') !== false) {
+        return "make it clean enough for display, even if final decoration is not perfect.";
+    }
+
+    if (($task['task_type'] ?? '') === 'test') {
+        return "revise important topics and formulas first instead of trying to cover everything equally.";
+    }
+
+    return "finish the required content/code/answers first, then format only if time remains.";
+}
 ?>

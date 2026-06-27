@@ -938,3 +938,137 @@ body {
 .dot-personal {
     background: #10b981;
 }
+/* My Tasks View */
+
+.my-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.my-task-header h3 {
+    font-size: 1.4rem;
+    color: #111827;
+    margin-bottom: 6px;
+}
+
+.my-task-header p {
+    color: #64748b;
+}
+
+.my-task-count {
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #4f46e5;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.my-task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.my-task-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr auto;
+    gap: 18px;
+    align-items: center;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+}
+
+.my-task-row.done {
+    opacity: 0.65;
+}
+
+.my-task-title-line {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.my-task-main h4 {
+    font-size: 1.1rem;
+    color: #111827;
+    margin-bottom: 6px;
+}
+
+.my-task-main p {
+    color: #64748b;
+}
+
+.my-task-progress {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.my-task-progress div {
+    padding: 12px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.my-task-progress strong {
+    display: block;
+    color: #111827;
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.my-task-progress span {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.my-task-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 950px) {
+    .my-task-row {
+        grid-template-columns: 1fr;
+    }
+
+    .my-task-progress {
+        grid-template-columns: 1fr;
+    }
+
+    .my-task-actions {
+        justify-content: flex-start;
+    }
+}
+.task-delete-final-btn {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.task-delete-final-btn:hover {
+    background: #fecaca;
+}
+
+.my-task-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
