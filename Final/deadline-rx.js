@@ -65,7 +65,6 @@ function injectPersonalTaskPanel() {
     `;
 
     parent.appendChild(personalPanel);
-    setupPlannerLocalSave();
 }
 
 function injectDeadlineRxPanel() {
@@ -120,6 +119,8 @@ function injectDeadlineRxPanel() {
     `;
 
     parent.appendChild(aiPanel);
+    setupPlannerLocalSave();
+    loadLatestAiPlan();
 }
 
 async function loadDeadlineRxTasks() {
@@ -690,5 +691,23 @@ async function deleteCompletedTask(taskId, taskType) {
     } catch (error) {
         console.error("Delete completed task error:", error);
         alert("Error deleting completed task.");
+    }
+}
+async function loadLatestAiPlan() {
+    const output = document.getElementById("aiPlanOutput");
+
+    if (!output) return;
+
+    try {
+        const res = await fetch("get-latest-ai-plan.php");
+        const data = await res.json();
+
+        if (data.success && data.has_plan && data.plan) {
+            output.className = "rx-plan-output";
+            output.innerHTML = renderAiPlanText(data.plan);
+        }
+
+    } catch (error) {
+        console.error("Could not load latest AI plan:", error);
     }
 }

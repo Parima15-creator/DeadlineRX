@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'gemini_config.php';
+require_once 'db_config.php';
 
 header('Content-Type: application/json');
 
@@ -18,6 +19,7 @@ $tasks = $input['tasks'] ?? [];
 $availableHoursToday = (float)($input['available_hours_today'] ?? 3);
 $extraContext = trim($input['extra_ai_context'] ?? '');
 $studentName = $_SESSION['student_name'] ?? 'Student';
+$studentEmail = $_SESSION['student_email'] ?? '';
 
 $availableHoursToday = max(0.5, min(12, $availableHoursToday));
 
@@ -105,6 +107,8 @@ DAMAGE CONTROL:
 $aiPlan = callGemini($prompt);
 
 if ($aiPlan) {
+    saveAiPlan($conn, $studentEmail, $aiPlan);
+
     echo json_encode([
         'success' => true,
         'plan' => $aiPlan
@@ -113,6 +117,8 @@ if ($aiPlan) {
 }
 
 $fallbackPlan = smartFallbackPlan($pendingTasks, $availableHoursToday, $extraContext);
+
+saveAiPlan($conn, $studentEmail, $fallbackPlan);
 
 echo json_encode([
     'success' => true,
@@ -399,5 +405,24 @@ function minimumVersion($task) {
     }
 
     return "finish the required content/code/answers first, then format only if time remains.";
+}
+
+function saveAiPlan($conn, $studentEmail, $planText) {
+    if (!$studentEmail || trim($planText) === '') {
+        return;
+    }
+
+    $stmt = $conn->prepare("
+        INSERT INTO ai_plans (student_email, plan_text)
+        VALUES (?, ?)
+    ");
+
+    if (!$stmt) {
+        return;
+    }
+
+    $stmt->bind_param("ss", $studentEmail, $planText);
+    $stmt->execute();
+    $stmt->close();
 }
 ?>
