@@ -105,6 +105,10 @@ Just like a medical prescription gives a treatment plan, DeadlineRX gives studen
   
 <img width="1899" height="1079" alt="Screenshot 2026-06-28 114136" src="https://github.com/user-attachments/assets/80463d09-7ee6-441b-9589-dbda58cd7f7f" />
 
+<img width="1896" height="1079" alt="Screenshot 2026-06-28 114434" src="https://github.com/user-attachments/assets/636d5987-4b19-494f-bdb4-9564ec2724c6" />
+
+<img width="1919" height="1079" alt="Screenshot 2026-06-28 134216" src="https://github.com/user-attachments/assets/6f348d86-e2ff-4d5e-b47f-9dfe97a9f7b7" />
+
 ---
 
 ## Deadline Risk Score
