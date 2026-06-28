@@ -24,13 +24,42 @@ $display_dept = isset($dept_names[$dept_id]) ? $dept_names[$dept_id] : "N/A";
 require_once 'db_config.php';
 
 // Fetch Assignments for this teacher
-$stmtA = $conn->prepare("SELECT Title, Due_Date, Subject, Class_ID FROM assignment WHERE Teacher_Username = ? ORDER BY Due_Date DESC");
+$stmtA = $conn->prepare("
+    SELECT 
+        Assignment_ID,
+        Title,
+        Due_Date,
+        Subject,
+        Class_ID,
+        Type,
+        Weightage,
+        No_of_Pages,
+        Difficulty_Index,
+        Description
+    FROM assignment 
+    WHERE Teacher_Username = ? 
+    ORDER BY Due_Date DESC
+");
 $stmtA->bind_param("s", $_SESSION['teacher_id']);
 $stmtA->execute();
 $assignmentsResult = $stmtA->get_result();
 
 // Fetch Tests for this teacher
-$stmtT = $conn->prepare("SELECT Subject, Test_Date, Class_ID FROM test WHERE Teacher_Username = ? ORDER BY Test_Date DESC");
+$stmtT = $conn->prepare("
+    SELECT 
+        Test_ID,
+        Subject,
+        Title,
+        Test_Title,
+        Test_Date,
+        Class_ID,
+        Weightage,
+        Difficulty_Index,
+        Description
+    FROM test 
+    WHERE Teacher_Username = ? 
+    ORDER BY Test_Date DESC
+");
 $stmtT->bind_param("s", $_SESSION['teacher_id']);
 $stmtT->execute();
 $testsResult = $stmtT->get_result();
@@ -201,24 +230,52 @@ $class_map = [
         </div>
     </div>
 
-    <div id="view-my-tasks" class="dashboard-view" style="display: none;">
+<div id="view-my-tasks" class="dashboard-view" style="display: none;">
     <div class="header">
         <h1 class="page-title">My Created Tasks</h1>            
     </div>
 
-    <div class="content-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div class="content-grid teacher-task-grid">
         <section class="tile">
             <h3 style="color: var(--aslb-text); font-size: 1.1rem;">Assignments Issued</h3><br>
+
             <div id="teacherAssignmentList">
                 <?php if ($assignmentsResult->num_rows > 0): ?>
                     <?php while($row = $assignmentsResult->fetch_assoc()): ?>
-                        <div style="padding: 15px; border: 1px solid var(--aslb-border); border-radius: 12px; margin-bottom: 12px; background: white;">
-                            <h4 style="color: var(--aslb-blue); margin: 0;"><?php echo htmlspecialchars($row['Title']); ?></h4>
-                            <p style="font-size: 0.85rem; margin: 5px 0;">
-                                Class: <?php echo $class_map[$row['Class_ID']] ?? 'Unknown'; ?> | 
-                                Subject: <?php echo htmlspecialchars($row['Subject']); ?>
-                            </p>
-                            <small style="color: var(--aslb-muted);">Deadline: <?php echo date('M d, Y', strtotime($row['Due_Date'])); ?></small>
+                        <div class="teacher-task-card assignment-card">
+                            <div class="teacher-task-main">
+                                <span class="teacher-task-chip assignment-chip">Assignment</span>
+
+                                <h4><?php echo htmlspecialchars($row['Title']); ?></h4>
+
+                                <p>
+                                    <strong>Class:</strong> <?php echo $class_map[$row['Class_ID']] ?? 'Unknown'; ?> |
+                                    <strong>Subject:</strong> <?php echo htmlspecialchars($row['Subject']); ?>
+                                </p>
+
+                                <small>
+                                    Deadline: <?php echo date('M d, Y', strtotime($row['Due_Date'])); ?>
+                                </small>
+                            </div>
+
+                            <div class="teacher-task-actions">
+                                <a 
+                                    class="task-edit-btn"
+                                    href="edit-teacher-task.php?type=assignment&id=<?php echo $row['Assignment_ID']; ?>"
+                                >
+                                    Edit
+                                </a>
+
+                                <form 
+                                    action="delete-teacher-task.php" 
+                                    method="POST"
+                                    onsubmit="return confirm('Are you sure you want to delete this assignment? It will be removed for all students in this class.');"
+                                >
+                                    <input type="hidden" name="task_type" value="assignment">
+                                    <input type="hidden" name="task_id" value="<?php echo $row['Assignment_ID']; ?>">
+                                    <button type="submit" class="task-delete-btn">Delete</button>
+                                </form>
+                            </div>
                         </div>
                     <?php endwhile; ?>
                 <?php else: ?>
@@ -229,15 +286,48 @@ $class_map = [
 
         <section class="tile">
             <h3 style="color: var(--aslb-text); font-size: 1.1rem;">Tests Scheduled</h3><br>
+
             <div id="teacherTestList">
                 <?php if ($testsResult->num_rows > 0): ?>
                     <?php while($row = $testsResult->fetch_assoc()): ?>
-                        <div style="padding: 15px; border: 1px solid var(--aslb-border); border-radius: 12px; margin-bottom: 12px; background: white;">
-                            <h4 style="color: #ef4444; margin: 0;"><?php echo htmlspecialchars($row['Subject']); ?></h4>
-                            <p style="font-size: 0.85rem; margin: 5px 0;">
-                                Class: <?php echo $class_map[$row['Class_ID']] ?? 'Unknown'; ?>
-                            </p>
-                            <small style="color: var(--aslb-muted);">Date: <?php echo date('M d, Y', strtotime($row['Test_Date'])); ?></small>
+                        <?php 
+                            $testTitle = $row['Test_Title'] ?: ($row['Title'] ?: $row['Subject']);
+                        ?>
+
+                        <div class="teacher-task-card test-card">
+                            <div class="teacher-task-main">
+                                <span class="teacher-task-chip test-chip">Test</span>
+
+                                <h4><?php echo htmlspecialchars($testTitle); ?></h4>
+
+                                <p>
+                                    <strong>Class:</strong> <?php echo $class_map[$row['Class_ID']] ?? 'Unknown'; ?> |
+                                    <strong>Subject:</strong> <?php echo htmlspecialchars($row['Subject']); ?>
+                                </p>
+
+                                <small>
+                                    Date: <?php echo date('M d, Y', strtotime($row['Test_Date'])); ?>
+                                </small>
+                            </div>
+
+                            <div class="teacher-task-actions">
+                                <a 
+                                    class="task-edit-btn"
+                                    href="edit-teacher-task.php?type=test&id=<?php echo $row['Test_ID']; ?>"
+                                >
+                                    Edit
+                                </a>
+
+                                <form 
+                                    action="delete-teacher-task.php" 
+                                    method="POST"
+                                    onsubmit="return confirm('Are you sure you want to delete this test? It will be removed for all students in this class.');"
+                                >
+                                    <input type="hidden" name="task_type" value="test">
+                                    <input type="hidden" name="task_id" value="<?php echo $row['Test_ID']; ?>">
+                                    <button type="submit" class="task-delete-btn">Delete</button>
+                                </form>
+                            </div>
                         </div>
                     <?php endwhile; ?>
                 <?php else: ?>
@@ -247,7 +337,6 @@ $class_map = [
         </section>
     </div>
 </div>
-</main>
 
 <script src="calendar-data.js"></script>
 <script src="calendar.js"></script>
