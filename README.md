@@ -81,6 +81,10 @@ Just like a medical prescription gives a treatment plan, DeadlineRX gives studen
 - Edit created assignments and tests
 - Delete created assignments and tests
 - Teacher-given tasks become visible to students of that class
+  
+<img width="1901" height="1079" alt="Screenshot 2026-06-28 110216" src="https://github.com/user-attachments/assets/e7d5ef5a-7532-44e6-a387-d3d04f1ad6bc" />
+
+<img width="1919" height="1079" alt="Screenshot 2026-06-28 110238" src="https://github.com/user-attachments/assets/283b1dd5-5f5b-45ae-ade8-44343937fd27" />
 
 ### Student Portal
 
@@ -98,6 +102,8 @@ Just like a medical prescription gives a treatment plan, DeadlineRX gives studen
 - Generate AI rescue plans
 - View latest generated AI plan even after refreshing
 - Calendar view for assignments, tests, holidays, and personal tasks
+  
+<img width="1899" height="1079" alt="Screenshot 2026-06-28 114136" src="https://github.com/user-attachments/assets/80463d09-7ee6-441b-9589-dbda58cd7f7f" />
 
 ---
 
@@ -157,6 +163,9 @@ The generated plan may suggest:
 2. Revise DFA because the test is tomorrow.
 3. Complete the minimum submit-worthy version of the assignment.
 4. Avoid unnecessary decoration or perfection until the core work is completed.
+
+<img width="1896" height="1079" alt="Screenshot 2026-06-28 114455" src="https://github.com/user-attachments/assets/b7d745ad-c2b6-4d85-8b47-af1b0e9c4bda" />
+<img width="1898" height="1079" alt="Screenshot 2026-06-28 114506" src="https://github.com/user-attachments/assets/eea19f2b-41e9-45fe-853c-82039a06d144" />
 
 ---
 
