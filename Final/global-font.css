@@ -1,0 +1,53 @@
+/* DeadlineRX Global Font System */
+
+:root {
+    --font-main: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+html,
+body,
+input,
+select,
+textarea,
+button,
+a,
+label,
+table,
+th,
+td,
+span,
+p,
+small,
+strong,
+div {
+    font-family: var(--font-main) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.page-title,
+.page-title-small,
+.welcome-title,
+.brand-title,
+.rx-panel-header h3,
+.rx-personal-header h3,
+.portal-card h2 {
+    font-family: var(--font-main) !important;
+    letter-spacing: -0.02em;
+}
+
+button,
+.submit-btn,
+.nav-button,
+.login-btn,
+.rx-generate-btn,
+.rx-add-task-btn,
+.task-save-btn,
+.task-complete-btn,
+.task-delete-btn {
+    font-family: var(--font-main) !important;
+}

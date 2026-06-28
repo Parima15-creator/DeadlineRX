@@ -77,9 +77,13 @@ $class_map = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Dashboard — DeadlineRX System</title>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="global-font.css">
     <link rel="stylesheet" href="teacher-dashboard.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css">
 </head>
 <body>
@@ -224,7 +228,7 @@ $class_map = [
                     </div>
                     <div class="form-group"><label>Proposed Deadline</label><input type="date" name="proposed_deadline" id="proposed_deadline" required></div>
                     <div class="form-group full-width"><label>Portion / Description</label><textarea name="description" rows="4"></textarea></div>
-                </div>
+                </div><br>
                 <button type="submit" class="submit-btn">Add Task</button>
             </form>
         </div>

@@ -16,6 +16,10 @@ $class = $_SESSION['class_name'] ?? '';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Dashboard — DeadlineRX System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="global-font.css">
   <link rel="stylesheet" href="student-dashboard.css">
 </head>
 
@@ -34,7 +38,7 @@ $class = $_SESSION['class_name'] ?? '';
 
     <nav class="nav-group">
       <a href="javascript:void(0)" id="btn-show-calendar" class="nav-button">Calendar View</a>
-      <a href="javascript:void(0)" id="btn-show-assignments" class="nav-button active">Assignments & Tests</a>
+      <a href="javascript:void(0)" id="btn-show-assignments" class="nav-button active">Add Tasks</a>
       <a href="javascript:void(0)" id="btn-show-my-tasks" class="nav-button">My Tasks</a>
     </nav>
 
