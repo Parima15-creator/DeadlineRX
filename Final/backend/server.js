@@ -8,14 +8,19 @@ dotenv.config({
 });
 
 const db = require("./config/db");
+
+// Import routes FIRST
 const taskRoutes = require("./routes/tasks");
+const aiRoutes = require("./routes/ai");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
+// THEN use them
 app.use("/api", taskRoutes);
+app.use("/api", aiRoutes);
 
 app.get("/", (req, res) => {
     res.send("DeadlineRX Backend Running 🚀");

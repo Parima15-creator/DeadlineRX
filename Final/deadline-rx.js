@@ -446,10 +446,11 @@ async function generateAiPlan() {
     `;
 
     try {
-        const res = await fetch("generate-ai-plan.php", {
+        const res = await fetch("http://localhost:3000/api/generate-plan", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+                student_name: "Student",
                 tasks: pendingTasks,
                 available_hours_today: availableHours,
                 extra_ai_context: extraContext
