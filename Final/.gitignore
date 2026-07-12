@@ -1,2 +1,3 @@
 gemini_config_local.php
+node_modules/
 .env
