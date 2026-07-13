@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: deadlinerx-frontend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: host.docker.internal
+      DB_USER: root
+      DB_PASSWORD:
+      DB_NAME: deadlinerx
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: deadlinerx-backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
