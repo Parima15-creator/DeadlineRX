@@ -127,6 +127,10 @@ $class = $_SESSION['class_name'] ?? '';
 
   <script src="calendar-data.js"></script>
   <script src="calendar.js"></script>
+  <script>
+    const studentEmail = <?= json_encode($_SESSION['student_email'] ?? "") ?>;
+    const studentName = <?= json_encode($_SESSION['student_name'] ?? "Student") ?>;
+  </script>
   <script src="deadline-rx.js"></script>
 
   <script>

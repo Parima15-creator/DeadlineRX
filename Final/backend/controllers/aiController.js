@@ -2,6 +2,8 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const buildPrompt = require("../services/promptBuilder");
 
+const savePlan = require("../utils/savePlan");
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 exports.generatePlan = async (req, res) => {
@@ -18,6 +20,9 @@ exports.generatePlan = async (req, res) => {
 
         const studentName =
             req.body.student_name || "Student";
+        
+        const studentEmail =
+            req.body.student_email || "demo@gmail.com";
 
         const pendingTasks = tasks.filter(task => !task.is_completed);
 
@@ -44,6 +49,8 @@ exports.generatePlan = async (req, res) => {
         const result = await model.generateContent(prompt);
 
         const plan = result.response.text();
+        
+        await savePlan(studentEmail, plan);
 
         res.json({
             success: true,

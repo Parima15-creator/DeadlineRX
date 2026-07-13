@@ -450,7 +450,8 @@ async function generateAiPlan() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                student_name: "Student",
+                student_name: studentName,
+                student_email: studentEmail,
                 tasks: pendingTasks,
                 available_hours_today: availableHours,
                 extra_ai_context: extraContext
@@ -700,7 +701,9 @@ async function loadLatestAiPlan() {
     if (!output) return;
 
     try {
-        const res = await fetch("get-latest-ai-plan.php");
+        const res = await fetch(
+            `http://localhost:3000/api/latest-plan?student_email=${encodeURIComponent(studentEmail)}`
+        );
         const data = await res.json();
 
         if (data.success && data.has_plan && data.plan) {
