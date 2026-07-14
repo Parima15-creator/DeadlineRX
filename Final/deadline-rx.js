@@ -446,9 +446,11 @@ async function generateAiPlan() {
     `;
 
     try {
-        const res = await fetch("http://localhost:3000/api/generate-plan", {
+        const res = await fetch("/api/generate-plan", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({
                 student_name: studentName,
                 student_email: studentEmail,
@@ -702,7 +704,7 @@ async function loadLatestAiPlan() {
 
     try {
         const res = await fetch(
-            `http://localhost:3000/api/latest-plan?student_email=${encodeURIComponent(studentEmail)}`
+            `/api/latest-plan?student_email=${encodeURIComponent(studentEmail)}`
         );
         const data = await res.json();
 
