@@ -10,10 +10,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DB_HOST: host.docker.internal
-      DB_USER: root
-      DB_PASSWORD:
-      DB_NAME: deadlinerx
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
     depends_on:
       - backend
 
@@ -24,5 +24,10 @@ services:
     container_name: deadlinerx-backend
     ports:
       - "3000:3000"
-    env_file:
-      - ./backend/.env
+    environment:
+      PORT: ${PORT}
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
